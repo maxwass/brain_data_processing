@@ -1,0 +1,12 @@
+
+
+
+
+implimentation notes:
+
+error when running correlation_calculation.,
+
+“ft_getopt.mexmaci64” cannot be opened because the developer cannot be verified.
+
+solution: 
+https://www.fieldtriptoolbox.org/faq/mexmaci64_cannot_be_opened_because_the_developer_cannot_be_verified/

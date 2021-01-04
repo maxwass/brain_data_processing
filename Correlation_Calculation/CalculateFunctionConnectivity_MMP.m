@@ -4,12 +4,16 @@
 % Calculate The Covariance Trajectory
 % This script only supports two parcellations: (1) desikan, (2) destrieux;
 
-addpath('./cifti_matlab')
+clear all;
+addpath('./brain_data_preprocess/Correlation_Calculation/cifti_matlab')
 
-%load subject
+
+
+%load subject list (list of strings of subject ids)
 load Allprocessedid.mat
-subjList = allprocessid(1:500);
 nSubject = size(subjList);
+nSubject = nSubject(1);
+
 
 %ROI index for caculating the covariance trajectory
 
@@ -29,9 +33,12 @@ movesize = 10;
 
 winds = sprintf('_wind%d_move%d_',windowsize,movesize);
 
+
+
+
 %datafolder = '/media/samsi/Extend2/HCP_fMRI/';
 %datafolder = 'F:\HCP_fMRI';
-datafolder = './';
+datafolder = '/Users/maxwasserman/Documents/MATLAB/brain_data_preprocess/brain_data';
 tasktype='rfMRI_REST1';
 %tasktype = 'tfMRI_GAMBLING';
 %tasktype = 'tfMRI_MOTOR';
@@ -43,26 +50,26 @@ tic;
 % memory issues with parfor
 for i_index=1:nSubject
 
-subject = num2str(subjList(i_index));
+subject = subjList(i_index,:);
 
 %load the subject specific label
 %desikan atlas, values 4 and 39 are not in atlas -- correspond to corpus collosum
-%subjlab = ft_read_cifti([datafolder subject '/' subject '.aparc.32k_fs_LR.dlabel.nii']);
-%segmentation_atlas = eval(['subjlab.x' num2s?tr(subject) '_aparc']);
+subjlab = ft_read_cifti([datafolder '/' subject '/' subject '.aparc.32k_fs_LR.dlabel.nii']);
+segmentation_atlas = eval(['subjlab.x' num2str(subject) '_aparc']);
 
 %destrieux atlas, values 4 and 39 are not in atlas -- correspond to corpus collosum
-subjlab = ft_read_cifti([datafolder subject '/' subject '.aparc.a2009s.32k_fs_LR.dlabel.nii']);
-segmentation_atlas = eval(['subjlab.x' num2str(subject) '_aparc_a2009s']);
+%subjlab = ft_read_cifti([datafolder '/' subject '/' subject '.aparc.a2009s.32k_fs_LR.dlabel.nii']);
+%segmentation_atlas = eval(['subjlab.x' num2str(subject) '_aparc_a2009s']);
 
 %reading the data
 if(strcmp(tasktype,'rfMRI_REST1'))
     %resting fMRI data
-    subj_tdata_LR1 = ft_read_cifti([datafolder subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii']);
-    subj_tdata_RL1 = ft_read_cifti([datafolder subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii']);
+    subj_tdata_LR1 = ft_read_cifti([datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii']);
+    subj_tdata_RL1 = ft_read_cifti([datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii']);
 else
     %task fMRI data
-    subj_tdata_LR1 = ft_read_cifti([datafolder subject '/' tasktype '_LR_Atlas_MSMAll.dtseries.nii']);
-    subj_tdata_RL1 = ft_read_cifti([datafolder subject '/' tasktype '_RL_Atlas_MSMAll.dtseries.nii']);
+    subj_tdata_LR1 = ft_read_cifti([datafolder '/' subject '/' tasktype '_LR_Atlas_MSMAll.dtseries.nii']);
+    subj_tdata_RL1 = ft_read_cifti([datafolder '/' subject '/' tasktype '_RL_Atlas_MSMAll.dtseries.nii']);
 end
 
 
