@@ -1,12 +1,28 @@
+%TODO: 
+-ensure subject id's for structural graphs MATCH these subject id's
 
-
+CHECK WITH ZHENGWU
+    -correct cortical/subcortical indices used
+    -covariance should be taken over all regions
+    -how to combine LR/RL: convex combination ok?
+    -REST2 useful? Any different than REST1? Can we use same structural graphs?
 
 
 implimentation notes:
 
-error when running correlation_calculation.,
+1)error when running correlation_calculation.,
 
 “ft_getopt.mexmaci64” cannot be opened because the developer cannot be verified.
 
 solution: 
 https://www.fieldtriptoolbox.org/faq/mexmaci64_cannot_be_opened_because_the_developer_cannot_be_verified/
+
+
+
+2) Atlas indices
+-getting indices used for cortical/subcortical brain regions in atlas
+%useful code:
+% unique(subjlab.x100206_aparc_a2009s(~isnan(subjlab.x100206_aparc_a2009s)))
+%  - run code, break point, open subjlab and subj_tdata and look
+%  at fields. brain_strcture and brain_structure_label??
+%  - use setdiff to find missing labels (corpus collosum)
