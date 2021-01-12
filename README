@@ -3,10 +3,13 @@
 
 CHECK WITH ZHENGWU
     -correct cortical/subcortical indices used
-    -covariance should be taken over all regions
+    -covariance should be taken over all time steps?
     -how to combine LR/RL: convex combination ok?
     -REST2 useful? Any different than REST1? Can we use same structural graphs?
-
+    - does that atlas file (ex: 173233.aparc.32k_fs_LR.dlabel.nii) only need LR version? not RL version for RL dtseries file??
+    -there are missing fcs from hcp_1200 database (scans without any LR or RL) (16 of them)
+    -But there are also missing scs (48 of them)
+    -16 of these do NOT have any corresponding scs BUT 32 of them have fcs. Are they simply missing sc scan?
 
 implimentation notes:
 
@@ -20,9 +23,12 @@ https://www.fieldtriptoolbox.org/faq/mexmaci64_cannot_be_opened_because_the_deve
 
 
 2) Atlas indices
--getting indices used for cortical/subcortical brain regions in atlas
-%useful code:
-% unique(subjlab.x100206_aparc_a2009s(~isnan(subjlab.x100206_aparc_a2009s)))
-%  - run code, break point, open subjlab and subj_tdata and look
-%  at fields. brain_strcture and brain_structure_label??
-%  - use setdiff to find missing labels (corpus collosum)
+-talked with Marty to find indices for Desikan and Destrieux
+    -to get indices used for cortical/subcortical brain regions in atlas
+        > unique(subjlab.x100206_aparc_a2009s(~isnan(subjlab.x100206_aparc_a2009s)))
+    -run code, break point, open subjlab and subj_tdata and look at fields. brain_strcture and brain_structure_label??
+    -use setdiff to find missing labels (corpus collosum)
+-to confirm check file prrovided by Yang (load_brain_data_FC_SC.m)
+    -load file
+    -check variable: ChosenROI_cortical and ChosenROI_subcortical
+

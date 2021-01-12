@@ -7,7 +7,8 @@ clear;
 %datafolder = '/Users/maxwasserman/Documents/MATLAB/brain_data_preprocess/brain_data';
 datafolder = '/Volumes/Elements/brain_data';
 %where to save matlab outputs
-data_write_folder = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_matlab';
+desikan_write_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan';
+destrieux_write_folder = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_destrieux';
 %external library for reading .nii data
 addpath('/Users/maxwasserman/Documents/MATLAB/brain_data_preprocess/Correlation_Calculation/cifti_matlab')
 
@@ -19,13 +20,15 @@ tasktype='rfMRI_REST1';
 % Decide on atlas
 atlas = "desikan"; %"destrieux"
 if(strcmp(atlas,"desikan"))                 %missing 4 and 39 are corpus collusum
-    ChosenROI_cortical    =   setxor(0:70,[0, 4, 39]); % og task ones [28,29,45,68,69,102,103,119,142,143];
+    ChosenROI_cortical    =   setxor(0:70,[0, 4, 39]);
     ChosenROI_subcortical =   []; %setxor(1:21,[1, 2]);
+    write_filename = [desikan_write_folder,'/',subject,'.mat'];
 elseif(strcmp(atlas,"destrieux"))           %missing 42 and 117 are corpus collusum
     ChosenROI_cortical    =   setxor(0:150,[0, 42, 117]); %may have to reorder if you want all left hemisphere regions together for viz
     ChosenROI_subcortical = []; %setxor(1:21,[1, 2]) % same as desikan
+    write_filename = [data_write_folder,'/',subject,'.mat'];
 else
-    error("Atlas " + atlas + " not found. Use Desikan or destrieux.")
+    error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
 end
 
 
@@ -42,6 +45,7 @@ for i_index=1:nSubject
     
     %have we already performed this computation? If so, skip
     write_filename = [data_write_folder,'/',subject,'.mat'];
+    
     files = dir(write_filename);
     [file_exist, ~] = size(files);
     if file_exist
@@ -58,20 +62,22 @@ for i_index=1:nSubject
     
     disp([num2str(i_index) ': patient ' subject ' - has LR? ' num2str(has_LR1) ' | has RL? ' num2str(has_RL1)]) 
     
+    % attempt lr
     [fc_cov_lr, time_lr] = deal(nan, 0.0);
     if has_LR1
         start = tic;
         name = 'LR';
-        fc_cov_lr = compute_fmri_cov(atlas, path_to_LR1, subject, tasktype, datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
+        [fc_cov_lr, fc_corr_lr] = compute_fmri_cov(atlas, path_to_LR1, subject, tasktype, datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
         time_lr = toc(start);
         disp(['   time for LR: ' num2str(time_lr)]);   
     end
-
+    
+    % attempt rl
     [fc_cov_rl, time_rl] = deal(nan, 0.0);
     if has_RL1
         start = tic;
         name = 'RL';
-        fc_cov_rl = compute_fmri_cov(atlas, path_to_RL1, subject, tasktype, datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
+        [fc_cov_rl, fc_corr_rl] = compute_fmri_cov(atlas, path_to_RL1, subject, tasktype, datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
         time_rl = toc(start);
         disp(['   time for RL: ' num2str(time_rl)]);
     end
@@ -89,6 +95,6 @@ for i_index=1:nSubject
     disp(txt)
     %disp(['   total time: ' num2str(elapsed_time) ', ave time: ' num2str(ave_patient_time)]);
 
-    save(write_filename, 'subject', 'fc_cov_lr', 'fc_cov_rl', 'tasktype', 'ChosenROI_cortical', 'ChosenROI_subcortical', 'atlas')
+    save(write_filename, 'subject', 'fc_cov_lr', 'fc_corr_lr', 'fc_cov_rl', 'fc_corr_rl','tasktype', 'ChosenROI_cortical', 'ChosenROI_subcortical', 'atlas')
 
 end

@@ -1,4 +1,4 @@
-function [fc_cov] = compute_fmri_cov(atlas, fmri_path, subject, tasktype, datafolder, name, ChosenROI_cortical, ChosenROI_subcortical)
+function [fc_cov, fc_corr] = compute_fmri_cov(atlas, fmri_path, subject, tasktype, datafolder, name, ChosenROI_cortical, ChosenROI_subcortical)
 %% inputs:
 % atlas: str in {'desikan', 'destrieux'}
 % fmri_path: str to fMRI .nii file
@@ -67,5 +67,6 @@ end
     
 %% covariance computed using *all* observations (no windowing!)
 fc_cov = cov(dtseries');
+fc_corr = corrcov(fc_cov);
 
 end
