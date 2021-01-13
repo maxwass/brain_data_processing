@@ -6,8 +6,8 @@
 
 clear
 
-fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_cortical_subcortical';
-
+%fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_cortical_subcortical';
+fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical';
 
 % load in relevant files
 
@@ -85,75 +85,117 @@ no_fc_no_sc = intersect(missing_LR_and_RL, no_sc);
 N = 87;
 N_cortical = 68;
 num_samples = length(exist_fc_and_sc);
+final_subject_list = exist_fc_and_sc;
 
-fcs_cov_lr = zeros(N,N,num_smaples);
-fcs_cov_rl = zeros(N,N,num_smaples);
+fcs_cov_lr = zeros(N,N,num_samples);
+fcs_cov_rl = zeros(N,N,num_samples);
+fcs_cov_mean = zeros(N,N,num_samples);
 
-scs = zeros(N,N,num_smaples);
-scs_cortical = zeros(N,N,num_smaples);
+fcs_corr_lr = zeros(N,N,num_samples);
+fcs_corr_rl = zeros(N,N,num_samples);
+fcs_corr_mean = zeros(N,N,num_samples);
 
-%%PROBLEM: SCS and FCS LABELED DIFFERENTLY - change this
-
-
+raw_scs = zeros(N,N,num_samples);
+transform_scs = zeros(N,N,num_samples);
 
 %combine sc's with their corresponding fcs
 for i_index = 1:num_samples
     subject = exist_fc_and_sc(i_index);
     
-    %load relevent fcs from .mat file in data folder
+    %load relevent fcs and metadata from .mat file in data folder
+    fprintf('loading %d: %d fcs...\n', i_index, subject);
     subject_file = sprintf('%s/%s.mat',fc_data_folder, num2str(subject));
+    
+    %struct with variables from .mat file
     fcs_and_metadata =  matfile(subject_file);
     
-    %TODO: check for existance, and pick out (and potentially cast) lr, rl,
-    %...
+
+    fc_cov_lr = fcs_and_metadata.fc_cov_lr;
+    fc_cov_rl = fcs_and_metadata.fc_cov_rl;
     
-    %TODO
-    %check to see if fc_corr = mean(fc_corr_lr, fc_corr_rl) is close to fc
-    %given by Yang
+    fc_corr_lr = fcs_and_metadata.fc_corr_lr;
+    fc_corr_rl = fcs_and_metadata.fc_corr_rl;
     
-    
+    has_lr = ~any(any(isnan(fc_cov_lr)));
+    has_rl = ~any(any(isnan(fc_cov_rl)));
+
+    if has_lr && has_rl
+        %cov's
+        fcs_cov_lr(:,:,i_index)   = fc_cov_lr;
+        fcs_cov_rl(:,:,i_index)   = fc_cov_rl;
+        fcs_cov_mean(:,:,i_index) = (fc_cov_lr + fc_cov_rl)/2;
+        %corr's
+        fcs_corr_lr(:,:,i_index)   = fc_corr_lr;
+        fcs_corr_rl(:,:,i_index)   = fc_corr_rl;
+        fcs_corr_mean(:,:,i_index) = (fc_corr_lr + fc_corr_rl)/2;
+        
+    elseif has_lr
+        %cov's
+        fcs_cov_lr(:,:,i_index)   = fc_cov_lr;
+        fcs_cov_rl(:,:,i_index)   = nan(size(fc_cov_lr)); %use existing  lr for size
+        fcs_cov_mean(:,:,i_index) = fc_cov_lr;
+        %corrs
+        fcs_corr_lr(:,:,i_index)   = fc_corr_lr;
+        fcs_corr_rl(:,:,i_index)   = nan(size(fc_corr_lr)); %use existing  lr for size
+        fcs_corr_mean(:,:,i_index) = fc_corr_lr;
+    elseif has_rl
+        %cov
+        fcs_cov_rl(:,:,i_index)   = fc_cov_rl;
+        fcs_cov_lr(:,:,i_index)   = nan(size(fc_cov_rl)); %use existing rl for size
+        fcs_cov_mean(:,:,i_index) = fc_cov_rl;
+        %corr
+        fcs_corr_rl(:,:,i_index)   = fc_corr_rl;
+        fcs_corr_lr(:,:,i_index)   = nan(size(fc_corr_rl)); %use existing rl for size
+        fcs_corr_mean(:,:,i_index) = fc_corr_rl;
+    else
+        error('constructing dataset but %d subject (%s) has neither LR or RL fc',i_index, subject)
+    end
+
     
     %pick out relevant sc in SCs
     if ~ismember(subject, subject_list_sc)
         error('Subject %d NOT in subject_list_sc',subject);
     end
     index_in_subject_list_sc = int64(find(subject_list_sc == subject));
-    raw_sc = SCs(:,:,index_in_subject_list_sc);
-    [sc, sc_cortical] = transform_sc(raw_sc);
+    raw_sc = SCs(:,:,index_in_subject_list_sc); %between 0 and 19843.00
+    raw_scs(:,:,i_index) = raw_sc;
     
-    scs(:,:,i_index) = sc;
-    scs_cortical(:,:,i_index) = sc_cortical;
+    %see Yang code/transform_sc.m... sc seems to have subcrotical for first 19
+    %[sc, sc_cortical] = transform_sc(raw_sc);
+    transform_scs(:,:,i_index) = log(raw_sc+raw_sc'+1);
+
     
-    
-    
+    clear fcs_and_metadata
     
 end
 
+%metadata is same for all subject, use last patient
+fcs_and_metadata =  matfile(subject_file);
+ChosenROI_cortical = fcs_and_metadata.ChosenROI_cortical;
+ChosenROI_subcortical = fcs_and_metadata.ChosenROI_subcortical;
+subcortical_first = fcs_and_metadata.subcortical_first;
+atlas = fcs_and_metadata.atlas;
+tasktype = string(fcs_and_metadata.tasktype);
+clear fcs_and_metadata
 
 
-%TODO: 1114-1065 = 49 BUT only 48 in_hcp_not_sc?
-%figure out how many have at least one LR/RL and sc
+%save data and metadata
 
-%now lets figure out how many have at least one fMRI scan (LR,RL) and a sc
-no_fc = union(missing_LR, missing_RL);
-no_sc = setdiff(subject_list_hcp1200, subject_list_sc); %sc IS subset of hcp
-no_fc_no_sc = intersect(no_fc, no_sc);
+%metadata:ChosenROI_cortical, Chosen_RIO_subcortical, subcortical_first, 
+% atlas, tasktype, final_subject_list
 
-has_fc = setdiff(subject_list_hcp1200, no_fc);
-has_sc = subject_list_sc;
-has_fc_and_sc = intersect(has_fc, has_sc);
-
-
-%for i_index = 1:length(hc1200_subject_list)
-    %pull out first subject
-    %does this subject have an sc?
-    %does this subject have an LR?
-    %does this subject have an RL?
-    
-    %If no sc OR neither LR/RL -> exclude
-
-%    disp('NOT YET IMPL')
-%end
+%data
+% final_subject_list - int array of subject id's
+% fcs_cov_lr/_rl/mean - double tensor 87x87xnum_samples (1064)
+% fcs_corr_lr/rl/mean - double tensor 87x87xnum_samples (1064)
+% raw_scs, transform_scs - int tensor/double tensor 87x87xnum_samples (1064)
 
 
+save('brain_dataset_cov.mat',... 
+    'fcs_cov_lr', 'fcs_cov_rl',  'fcs_cov_mean',...
+    'fcs_corr_lr', 'fcs_corr_rl', 'fcs_corr_mean',...
+    'raw_scs', 'transform_scs',...
+    'final_subject_list',...
+    'ChosenROI_cortical', 'ChosenROI_subcortical', 'subcortical_first',...
+    'atlas','tasktype');
 

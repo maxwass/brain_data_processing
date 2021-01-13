@@ -95,7 +95,8 @@ for i_index=1:nSubject
     txt = sprintf('===elapsed time: %.2f | ave time: %.1f | expected time remain %.2f (hrs)=== %%\n', elapsed_time, ave_patient_time, expected_time_left);
     disp(txt)
     %disp(['   total time: ' num2str(elapsed_time) ', ave time: ' num2str(ave_patient_time)]);
-
+    subject = string(subject);
+    tasktype = string(tasktype);
     save(write_filename, 'subject', 'fc_cov_lr', 'fc_corr_lr', 'fc_cov_rl', 'fc_corr_rl','tasktype', 'ChosenROI_cortical', 'ChosenROI_subcortical', 'atlas', 'subcortical_first')
 
 end
