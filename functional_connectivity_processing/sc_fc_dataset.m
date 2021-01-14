@@ -87,16 +87,18 @@ N_cortical = 68;
 num_samples = length(exist_fc_and_sc);
 final_subject_list = exist_fc_and_sc;
 
-fcs_cov_lr = zeros(N,N,num_samples);
-fcs_cov_rl = zeros(N,N,num_samples);
-fcs_cov_mean = zeros(N,N,num_samples);
+tensor_shape = [N, N, num_samples];
 
-fcs_corr_lr = zeros(N,N,num_samples);
-fcs_corr_rl = zeros(N,N,num_samples);
-fcs_corr_mean = zeros(N,N,num_samples);
+fcs_cov_lr = zeros(tensor_shape);
+fcs_cov_rl = zeros(tensor_shape);
+fcs_cov_mean = zeros(tensor_shape);
 
-raw_scs = zeros(N,N,num_samples);
-transform_scs = zeros(N,N,num_samples);
+fcs_corr_lr = zeros(tensor_shape);
+fcs_corr_rl = zeros(tensor_shape);
+fcs_corr_mean = zeros(tensor_shape);
+
+raw_scs = zeros(tensor_shape);
+transform_scs = zeros(tensor_shape);
 
 %combine sc's with their corresponding fcs
 for i_index = 1:num_samples
@@ -174,8 +176,8 @@ fcs_and_metadata =  matfile(subject_file);
 ChosenROI_cortical = fcs_and_metadata.ChosenROI_cortical;
 ChosenROI_subcortical = fcs_and_metadata.ChosenROI_subcortical;
 subcortical_first = fcs_and_metadata.subcortical_first;
-atlas = fcs_and_metadata.atlas;
-tasktype = string(fcs_and_metadata.tasktype);
+atlas = char(fcs_and_metadata.atlas);
+tasktype = char(fcs_and_metadata.tasktype); %must use char for python loading
 clear fcs_and_metadata
 
 
