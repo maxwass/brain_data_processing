@@ -2,3 +2,4 @@ brain_data/
 .DS_Store
 Correlation_Calculation/CalculateFunctionConnectivity_MMP.m~
 *~
+plots/
