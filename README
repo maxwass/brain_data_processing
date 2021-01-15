@@ -10,9 +10,19 @@ fc_processing/ #folder housing the matlab scripts to compute to fcs from the dat
     -> subject_list_dir_debug.m
     -> transform_sc.m
 
+misc/
+    ->data_accounting.m
+        --analysis on what data we have for each patients, and which scans are needed
+    ->
 
 
 
+
+Attributions
+    Zhengwu Zhang - professor at UNC
+    Martin Cole - phd student at UofR
+    FieldTrip - use of cifti file reading libary - http://www.fieldtriptoolbox.org
+    HCP - human connectome project - http://www.humanconnectome.org
 
 
 

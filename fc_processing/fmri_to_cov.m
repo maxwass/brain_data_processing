@@ -55,53 +55,19 @@ for roi_index = 1:total_ROIs
         roi = ChosenROI_subcortical(roi_index);
         %create mask for brain region r
         indices = logical(subj_tdata.brainstructure==roi);
-        %average activity value in masked region => functional signal
-        pre = mean(subj_tdata.dtseries(indices,:),1);
-        
     elseif (20 <= roi_index) && (roi_index <= 87) %cortical
         %roi_index should be 1 when we first enter this loop -> subtract
         %off previous increments from above subcortical case.
         roi = ChosenROI_cortical( roi_index - length(ChosenROI_subcortical) );
         %create mask for brain region r
         indices = logical([(segmentation_atlas==roi); zeros(ntotal-ncortex,1)]);
-        %average activity value in masked region => functional signal
-        pre = mean(subj_tdata.dtseries(indices,:),1);
-        
     else
         error('more indices %d than ROI %d',roi_index ,total_ROIs);
     end
     
     %average activity value in masked region => functional signal
     dtseries(roi_index,:) = mean(subj_tdata.dtseries(indices,:),1);
-    %check that pre == 
-    if ~ all(pre == dtseries(roi_index,:))
-        fprintf('change is invalid!')
-    end
-    
 end
-    
-dtseries_check = zeros(nROIChosenROI,nTR);
-
-% subcortical structure:
-for j_index=1:length(ChosenROI_subcortical)
-    roi = ChosenROI_subcortical(j_index);
-    indices = logical(subj_tdata.brainstructure==roi);
-    dtseries_check(j_index,:) = mean(subj_tdata.dtseries(indices,:),1);
-end
-
-%cortical structure
-for j=1:length(ChosenROI_cortical)
-    j_index = j_index + 1; % use old int index from above, and increment
-    roi = ChosenROI_cortical(j);
-    indices = logical([(segmentation_atlas==roi); zeros(ntotal-ncortex,1)]);
-    %place average activity in region r into j_index row
-    dtseries_check(j_index,:) = mean(subj_tdata.dtseries(indices,:),1);
-end
-
-if ~all(all(dtseries==dtseries_check))
-    fprintf('Zhengwu code different from yours!')
-end
-
 
     
 %% covariance computed using *all* observations (no windowing!)
