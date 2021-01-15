@@ -1,3 +1,25 @@
+This repository is for the computation of functional connectivities (covariance matrices) for patients in the HCP_1200 dataset. There are 1113 patients in the HCP_1200 dataset. A subset of them have at least one (of two possible) fmri scans for the REST1 portion of the dataset. Each available scan is parcelized according to an atlas (Deskian or Destreuix), activity values are averaged in these parcellizations for each time point thus creating a vector observation (each entry corresponds to a brain regions). These observations are then used to compute the overall covariance matrix.
+
+
+fc_processing/ #folder housing the matlab scripts to compute to fcs from the data
+    -> compute_fcs.m
+        --script coordinating fc computation for all patients. Saves .mat for each patient with fc's and relavatn metadata
+    -> fmri_to_cov.m
+        --maps a single fmri scan (LR or RL) with its corresponding atlas raw to an fc.  
+    -> sc_fc_dataset.m
+    -> subject_list_dir_debug.m
+    -> transform_sc.m
+
+
+
+
+
+
+
+
+
+
+
 %TODO: 
 -ensure subject id's for structural graphs MATCH these subject id's
 
@@ -6,10 +28,7 @@ CHECK WITH ZHENGWU
     -covariance should be taken over all time steps?
     -how to combine LR/RL: convex combination ok?
     -REST2 useful? Any different than REST1? Can we use same structural graphs?
-    - does that atlas file (ex: 173233.aparc.32k_fs_LR.dlabel.nii) only need LR version? not RL version for RL dtseries file??
-    -there are missing fcs from hcp_1200 database (scans without any LR or RL) (16 of them)
-    -But there are also missing scs (48 of them)
-    -16 of these do NOT have any corresponding scs BUT 32 of them have fcs. Are they simply missing sc scan?
+    -there are missing fcs from hcp_1200 database (scans without any LR or RL) (16 of them), but there are also missing scs (48 of them), 16 of these do NOT have any corresponding scs BUT 32 of them have fcs. Are they simply missing sc scan?
 
 implimentation notes:
 
