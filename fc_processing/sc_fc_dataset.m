@@ -1,16 +1,11 @@
 %% zip together sc's and fc's for dataset of (sc, fc) pairs
-% 1) check that patient id are equal
-% 2) check that (sub)cortical indices are identical
-% 3) resave with combined
 
-
-clear
+clear all;
 
 %fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_cortical_subcortical';
 fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical';
 desikan_data_folder = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan';
 %% load in relevant files
-
 %scs
 % all_id (1065x1 double)
 % loaded_tensor_sub (4-D double)
@@ -18,7 +13,6 @@ load('HCP_subcortical_CMData_desikan.mat')
 SCs = squeeze(loaded_tensor_sub(:,:,1,:)); % (87x87x1065 double)
 subject_list_sc = int64(all_id);
 clear('mode3', 'loaded_bin_network_sub','loaded_tensor_sub', 'all_id'); %unused variables
-
 
 %OLD correlation fcs. Given by Zhengwu. Patients w/ fcs subset of those w/ sc
 % all_fc (1x1065 cell): 
@@ -28,14 +22,7 @@ clear('mode3', 'loaded_bin_network_sub','loaded_tensor_sub', 'all_id'); %unused 
 % subjList (1065x1 double)
 load('desikan_fc_all.mat')
 subject_list_fc = int64(subjList); %subject_list_fc == subject_list_sc
-FCs = reshape(cell2mat(all_fc),87,87,[]); %(87x87x1058 double)
 clear('all_fc', 'subjList')
-
-%which patients are missing in FCs relative to SCs. If we can find FC's for
-%these patients...more data samples
-missing_fcs_index = [239,297,351,387,639,870,1064]; %indexes of patients WITH scs and WITHOUT (old) fcs
-missing_fcs_ids   = subject_list_sc(missing_fcs_index);
-
 
 % new FCs (downloaded from HCP_1200 server and did local computation)
 % hcp1200_subject_list (1x1113 double): 
@@ -46,6 +33,7 @@ clear('hcp1200_subject_list')
 % exist_any_fc_and_sc (1064x1 int64)  subjects with fc(s) and sc
 % exist_both_fc_and_sc (1051x1 int64)  subjects with both fcs and sc
 load fc_and_sc_sets.mat
+missing_one_scan = setdiff(exist_any_fc_and_sc, exist_both_fc_and_sc);
 
 %switch this if only like to consider patients with both functional scans
 dataset = exist_any_fc_and_sc; %exist_both_fc_and_sc
@@ -80,6 +68,9 @@ for i_index = 1:num_samples
     
     %struct with variables from .mat file
     fcs_and_metadata =  matfile(subject_file);
+    if i_index ==35
+        fprintf('problem here...inspect\n');
+    end
     
 
     fc_cov_lr = fcs_and_metadata.fc_cov_lr;
@@ -93,6 +84,9 @@ for i_index = 1:num_samples
     has_rl = ~any(any(isnan(fc_cov_rl)));
     
     if has_lr && has_rl
+        if ismember(subject,missing_one_scan)
+            error('Subject %d is missing a scan but in wrong part!',subject)
+        end
         %cov's
         fcs_cov_lr(:,:,i_index)   = fc_cov_lr;
         fcs_cov_rl(:,:,i_index)   = fc_cov_rl;
@@ -129,6 +123,10 @@ for i_index = 1:num_samples
     if ~ismember(subject, subject_list_sc)
         error('Subject %d NOT in subject_list_sc',subject);
     end
+    
+    %index order between final_subject_list and subject_list_sc can be
+    %different
+    %find index of subject in the subject list (which indexes the SCs)
     index_in_subject_list_sc = int64(find(subject_list_sc == subject));
     raw_sc = SCs(:,:,index_in_subject_list_sc); %between 0 and 19843.00
     raw_scs(:,:,i_index) = raw_sc;
@@ -144,11 +142,11 @@ end
 
 %% prepare metadata
 %metadata is same for all subject, use last patient
-fcs_and_metadata =  matfile(subject_file);
-ChosenROI_cortical = fcs_and_metadata.ChosenROI_cortical;
+fcs_and_metadata      =  matfile(subject_file);
+ChosenROI_cortical    = fcs_and_metadata.ChosenROI_cortical;
 ChosenROI_subcortical = fcs_and_metadata.ChosenROI_subcortical;
-subcortical_first = fcs_and_metadata.subcortical_first;
-atlas = char(fcs_and_metadata.atlas);
+subcortical_first     = fcs_and_metadata.subcortical_first;
+atlas    = char(fcs_and_metadata.atlas);
 tasktype = char(fcs_and_metadata.tasktype); %must use char for python loading
 clear fcs_and_metadata
 
@@ -165,7 +163,11 @@ clear fcs_and_metadata
 % raw_scs, transform_scs - int tensor/double tensor 87x87xnum_samples (1064)
 
 
-save('brain_dataset_cov.mat',... 
+%note the invariant enforced:
+% INVARIANT: ith entry in final_subject_list corresponds to the ith entry in
+%             all data tensors fcs_* and *_scs
+
+save('brain_dataset_sc_fc_pairs.mat',... 
     'fcs_cov_lr', 'fcs_cov_rl',  'fcs_cov_mean',...
     'fcs_corr_lr', 'fcs_corr_rl', 'fcs_corr_mean',...
     'raw_scs', 'transform_scs',...

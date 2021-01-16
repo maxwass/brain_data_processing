@@ -1,4 +1,7 @@
-%clarify repeats in subject list
+%% find repeats in subject list
+
+%there was one patient repeated due to a bug in the hcp_1200 subject list
+%creation function. This found the repeat.
 
 % Get a list of all files and folders in this folder.
 files = dir('/Volumes/Elements/brain_data');

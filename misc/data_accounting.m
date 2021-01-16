@@ -12,7 +12,7 @@ clear('mode3', 'loaded_bin_network_sub','loaded_tensor_sub', 'all_id');
 
 %% OLD correlation fcs. Given by Zhengwu->Yang->Max. Patients w/ fc are subset of those w/ sc
 % variables in 'desikan_fc_all.mat'
-%  all_fc (1x1065 cell): 
+%  all_fc (1x1065 cell):         has      rl rl           rl  rl
 %    ->missing_data (empty cells) @ [239,297,351,387,639,870,1064]
 %  ChosenROI_cortical (1x68 double)
 %  ChosenROI_subcortical (1x68 double)
@@ -88,7 +88,7 @@ fprintf("%d patients HAVE FC but DONT HAVE SC\n", length(exist_any_fc_missing_sc
 %high priority patients - already have sc, just need fc
 % only one patient that has an sc does NOT have an fc (179548)
 missing_fc_exist_sc = intersect(missing_LR_and_RL, exist_sc);
-fprintf("%d patients DONT HAVE FC but HAVE SC\n", length(missing_fc_exist_sc));
+fprintf("%d patients DONT HAVE FC but HAVE SC\n", length(missing_fc_exist_sc)); %179548 = index 387 in subject_list_sc
 
 %lowest priority patients - dont have sc OR fc
 missing_fc_missing_sc = intersect(missing_LR_and_RL, missing_sc);
