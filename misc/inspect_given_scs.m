@@ -1,6 +1,10 @@
 
-load('HCP_subcortical_CMData_desikan.mat')
-SCs = squeeze(loaded_tensor_sub(:,:,1,:)); % (87x87x1065 double)
+%scs
+% subject_list (1065x1 int64)
+% scs (87x87x1065 double)
+sc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/scs_desikan.mat');
+SCs = sc_file.scs; 
+subject_list_sc = sc_file.subject_list;
 
 %any graphs nan?
 anynan = any(any(any(isnan(SCs))));

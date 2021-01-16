@@ -1,26 +1,15 @@
 %% zip together sc's and fc's for dataset of (sc, fc) pairs
 
-clear all;
+clear;
 fc_data_folder   = '~/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical';
 
 %% load in relevant files
 %scs
-% all_id (1065x1 double)
-% loaded_tensor_sub (4-D double)
-load('HCP_subcortical_CMData_desikan.mat')
-SCs = squeeze(loaded_tensor_sub(:,:,1,:)); % (87x87x1065 double)
-subject_list_sc = int64(all_id);
-clear('mode3', 'loaded_bin_network_sub','loaded_tensor_sub', 'all_id'); %unused variables
-
-%OLD correlation fcs. Given by Zhengwu. Patients w/ fcs subset of those w/ sc
-% all_fc (1x1065 cell): 
-%  ->missing_data (empty cells) @ [239,297,351,387,639,870,1064]
-% ChosenROI_cortical (1x68 double)
-% ChosenROI_subcortical (1x68 double)
-% subjList (1065x1 double)
-load('desikan_fc_all.mat')
-subject_list_fc = int64(subjList); %subject_list_fc == subject_list_sc
-clear('all_fc', 'subjList')
+% subject_list (1065x1 int64)
+% scs (87x87x1065 double)
+sc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/scs_desikan.mat');
+SCs = sc_file.scs; 
+subject_list_sc = sc_file.subject_list;
 
 % new FCs (downloaded from HCP_1200 server and did local computation)
 % hcp1200_subject_list (1x1113 double): 
@@ -146,6 +135,16 @@ clear fcs_and_metadata
 
 
 %% save data and metadata
+
+
+%OLD correlation fcs file 
+% ChosenROI_cortical (1x68 double)
+% ChosenROI_subcortical (1x68 double)
+old_fc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/correlations_desikan_old.mat');
+ChosenROI_cortical = old_fc_file.ChosenROI_cortical;
+ChosenROI_subcortical = old_fc_file.ChosenROI_subcortical;
+clear('old_fc_file')
+
 
 %metadata:ChosenROI_cortical, Chosen_RIO_subcortical, subcortical_first, 
 % atlas, tasktype, final_subject_list

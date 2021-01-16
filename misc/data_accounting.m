@@ -4,23 +4,21 @@ clear; clc;
 %% SCS. Given by Zhengwu -> Yang -> Max.
 % all_id (1065x1 double)
 % loaded_tensor_sub (4-D double)
-load('HCP_subcortical_CMData_desikan.mat')
-SCs = squeeze(loaded_tensor_sub(:,:,1,:)); % (87x87x1065 double)
-subject_list_sc = int64(all_id);
-clear('mode3', 'loaded_bin_network_sub','loaded_tensor_sub', 'all_id');
+%scs
+% subject_list (1065x1 int64)
+% scs (87x87x1065 double)
+sc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/scs_desikan.mat');
+SCs = sc_file.scs; 
+subject_list_sc = sc_file.subject_list;
 
-
-%% OLD correlation fcs. Given by Zhengwu->Yang->Max. Patients w/ fc are subset of those w/ sc
-% variables in 'desikan_fc_all.mat'
-%  all_fc (1x1065 cell):         has      rl rl           rl  rl
-%    ->missing_data (empty cells) @ [239,297,351,387,639,870,1064]
-%  ChosenROI_cortical (1x68 double)
-%  ChosenROI_subcortical (1x68 double)
-%  subjList (1065x1 double)
-load('desikan_fc_all.mat')
-subject_list_fc = int64(subjList); %subject_list_fc == subject_list_sc
-FCs = reshape(cell2mat(all_fc),87,87,[]); %(87x87x1058 double)
-clear('all_fc', 'subjList')
+%% OLD correlation fcs.
+% variables in 'correlations_desikan_old.mat'
+%  fcs (87x87x1065 cdouble)
+%  subject_list (1065x1 double)
+old_fc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/correlations_desikan_old.mat');
+subject_list_fc = int64(old_fc_file.subject_list); %subject_list_fc == subject_list_sc
+FCs = old_fc_file.fcs; %(87x87x1058 double)
+clear('old_fc_file')
 
 %which patients are missing in FCs relative to SCs. If we can find FC's for
 %these patients...more data samples
@@ -44,7 +42,7 @@ sc_subset_hcp = all(ismember(subject_list_sc, subject_list_hcp1200)); %True
 %  missing_RL (1x19 couble)
 %  missing_LR_and_RL (1x17 double)
 %  type -  (char array) which fmri files {'msmall', 'no_msmall'}
-load subjects_missing_data.mat
+load subjects_missing_fc_data.mat.mat
 
 
 %% Creating non-intersecting sets:

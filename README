@@ -35,19 +35,24 @@ data/  ==> .mat files outputted and/or used by other scripts
         List of all subject on HCP_1200 aws s3 server.
         Includes all patients, regardless of what scans they have.
 
-    subject_missing_data.mat
+    subject_missing_fc_data.mat
         Set of patient ids
             missing_LR = all patients w/o an LR scan for REST1
             missing_RL = all patients w/o an RL scan for REST1
             missing_LR_and_RL = patients missing both LR and RL scans for REST1 (interesection of prev sets)
             type = string indicating which fmri data is being referenced
 
-    desikan_fc_all.mat
-        Correlation matrices provided by Zhengwu to Yang, and from Yang to me.
-    
-    HCP_subcortical_CMData_desikan.mat
-        SCs matrices provided by Zhengwu to Yang, and from Yang to me.
+    correlations_desikan_old.mat
+        1058 87x87 Correlation (not Covariance) matrices provided by Zhengwu to Yang, and from Yang to me.
+        Unclear if these are if lr, rl, mean.
+        Desikan atlas, subcortical nodes come LAST (69:87), corresponding patient ids in subject_list_sc
+        Missing data for patients relative to scs_desikan.mat. Aka patients with scs but no fcs (here)
+            patient ids of missing data                  <-> [150019, 160931, 173233, 179548, 351938, 693461, 995174]
 
+
+    scs_desikan.mat
+        1065 87x87 structural connectivities provided by Zhengwu.
+        Desikan atlas, Subcortical nodes come FIRST (1-19), corresponding patient ids in subject_list_sc
 
 
 

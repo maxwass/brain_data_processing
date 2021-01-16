@@ -12,11 +12,12 @@ clear('atlas', 'ChosenROI_cortical', 'ChosenROI_subcortical', 'tasktype')
 %use this to load each individuals .mat file with fcs
 fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical';
 
-% load provided scs
-load('HCP_subcortical_CMData_desikan.mat')
-SCs = squeeze(loaded_tensor_sub(:,:,1,:)); % (87x87x1065 double)
-subject_list_sc = int64(all_id);
-clear('loaded_tensor_sub', 'all_id');
+%scs
+% subject_list (1065x1 int64)
+% scs (87x87x1065 double)
+sc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/scs_desikan.mat');
+SCs = sc_file.scs; 
+subject_list_sc = sc_file.subject_list;
 
 %loop over every subject in final dataset
 %*Invariant*the ith entry (subject id) in the final_subject_list 
