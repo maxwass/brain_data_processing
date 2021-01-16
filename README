@@ -88,33 +88,36 @@ misc/ ==> miscellaneos files for visualizing, analysing the data, and testing ot
         dont use this
 
 
-Attributions
+
+
+
+
+===================Attributions========================
     Zhengwu Zhang - professor at UNC
-    Martin Cole - phd student at UofR
-    FieldTrip - use of cifti file reading libary - http://www.fieldtriptoolbox.org
-    HCP - human connectome project - http://www.humanconnectome.org
+    Martin Cole   - phd student at UofR
+    FieldTrip     - use of cifti file reading libary - http://www.fieldtriptoolbox.org
+    HCP           - human connectome project - http://www.humanconnectome.org
 
 
+If you make use of this repository, please cite:
+-Wasserman, Mateos ....PAPER TO BE POSTED
 
-======================================================
-implimentation notes:
+If you make use of the DATA in this repository, please ALSO cite:
+-Zhang, Zhengwu, Maxime Descoteaux, Jingwen Zhang, Gabriel Girard, Maxime Chamberland, David Dunson, Anuj Srivastava, and Hongtu Zhu. "Mapping population-based structural connectomes." NeuroImage 172 (2018): 130-145.
 
-1)error when running correlation_calculation.,
-
-“ft_getopt.mexmaci64” cannot be opened because the developer cannot be verified.
-
-solution: 
-https://www.fieldtriptoolbox.org/faq/mexmaci64_cannot_be_opened_because_the_developer_cannot_be_verified/
+-Zhang, Zhengwu, Genevera I. Allen, Hongtu Zhu, and David Dunson. "Tensor network factorizations: Relationships between brain structural connectomes and traits." Neuroimage 197 (2019): 330-343.
 
 
+Acknowledgements/citations as requirement for use of HCP Data:
+-"Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University."
 
-2) Atlas indices
--talked with Marty to find indices for Desikan and Destrieux
-    -to get indices used for cortical/subcortical brain regions in atlas
-        > unique(subjlab.x100206_aparc_a2009s(~isnan(subjlab.x100206_aparc_a2009s)))
-    -run code, break point, open subjlab and subj_tdata and look at fields. brain_strcture and brain_structure_label??
-    -use setdiff to find missing labels (corpus collosum)
--to confirm check file prrovided by Yang (load_brain_data_FC_SC.m)
-    -load file
-    -check variable: ChosenROI_cortical and ChosenROI_subcortical
+-Matthew F. Glasser, Stamatios N. Sotiropoulos, J. Anthony Wilson, Timothy S. Coalson, Bruce Fischl, Jesper L. Andersson, Junqian Xu, Saad Jbabdi, Matthew Webster, Jonathan R. Polimeni, David C. Van Essen, and Mark Jenkinson (2013).
+The minimal preprocessing pipelines for the Human Connectome Project. Neuroimage 80: 105-124.
 
+-Jenkinson M, Beckmann CF, Behrens TE, Woolrich MW, and Smith SM. (2012). FSL. NeuroImage, 62:782-790. 
+
+-Fischl B. (2012). FreeSurfer. NeuroImage, 62:774-781.
+
+-Jenkinson M, Bannister PR, Brady JM, and Smith SM. (2002). Improved optimisation for the robust and accurate linear registration and motion correction of brain images. NeuroImage 17(2):825-841.
+
+-Glasser MF, and Van Essen DC. (2011). Mapping human cortical areas in vivo based on myelin content as revealed by T1- and T2-weighted MRI. J Neurosci. 31:11597-11616

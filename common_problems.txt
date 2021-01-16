@@ -1,0 +1,21 @@
+======================================================
+
+ 1)error when running correlation_calculation.,
+
+ “ft_getopt.mexmaci64” cannot be opened because the developer cannot be verified.
+
+ solution:
+ https://www.fieldtriptoolbox.org/faq/mexmaci64_cannot_be_opened_because_the_developer_cannot_be_verified/
+
+
+
+ 2) Atlas indices
+ -talked with Marty to find indices for Desikan and Destrieux
+     -to get indices used for cortical/subcortical brain regions in atlas
+         > unique(subjlab.x100206_aparc_a2009s(~isnan(subjlab.x100206_aparc_a2009s)))
+     -run code, break point, open subjlab and subj_tdata and look at fields. brain_strcture and brain_structure_label??
+     -use setdiff to find missing labels (corpus collosum)
+ -to confirm check file prrovided by Yang (load_brain_data_FC_SC.m)
+     -load file
+     -check variable: ChosenROI_cortical and ChosenROI_subcortical
+
