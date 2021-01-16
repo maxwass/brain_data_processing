@@ -14,6 +14,44 @@ fc_processing/ ==> compute to fcs from the data
     transform_sc.m
         Maps from raw scs to transformed scs via log(raw_edge+1)
 
+data/  ==> .mat files outputted and/or used by other scripts
+    brain_dataset_fc_sc_pairs.mat
+        Output of sc_fc_dataset.m
+        Pairs of scs and fcs (covariances and correlations of all scans available - lr and rl in REST1)
+        Tensors are of shape 87x87x1064. To access one matrix use: fcs(:,:,idx_of_interest)
+            If a scan is not available, the matrix will be all NaNs
+        Associated metadata included (atlas used, subject ids, etc)
+        Invariant: All data in same order. The fcs(:,:,i) <==> scs(:,:,i) <==> final_subject_list(i)
+        *Not included in git download (too large 380 MB).* See download link below.
+
+   
+    fc_and_sc_set.mat
+        sets of patient id
+            exist_any_fc_and_sc := patients with at least one fc (lr and/or rl) and an sc
+            exist_both_fc_and_sc := patients with both fcs (lr and rl) and an sc
+        exist_any_fc_and_sc is used at training set
+
+    hcp_1200_subject_list.mat
+        List of all subject on HCP_1200 aws s3 server.
+        Includes all patients, regardless of what scans they have.
+
+    subject_missing_data.mat
+        Set of patient ids
+            missing_LR = all patients w/o an LR scan for REST1
+            missing_RL = all patients w/o an RL scan for REST1
+            missing_LR_and_RL = patients missing both LR and RL scans for REST1 (interesection of prev sets)
+            type = string indicating which fmri data is being referenced
+
+    desikan_fc_all.mat
+        Correlation matrices provided by Zhengwu to Yang, and from Yang to me.
+    
+    HCP_subcortical_CMData_desikan.mat
+        SCs matrices provided by Zhengwu to Yang, and from Yang to me.
+
+
+
+
+
 misc/ ==> miscellaneos files for visualizing, analysing the data, and testing other scripts
     data_accounting.m **
         Analysis on what data we have for each patients, and which scans are needed

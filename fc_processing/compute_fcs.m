@@ -4,7 +4,7 @@
 %   Use of cifti - _______
 
 %% setup
-clear;
+clear all;
 
 % The directory brain_data/ is assumed to have a folder for each patient. The
 %  name of each directory should be exactly equal to the patient id. All
@@ -13,13 +13,13 @@ clear;
 datafolder = '/Volumes/Elements/brain_data';
 
 %Where to save matlab outputs. We save one file per patient.
-desikan_write_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical'; %subcortical first
+desikan_write_folder   = '~/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical'; %subcortical first
 subcortical_first = true;
-destrieux_write_folder = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_destrieux';
+destrieux_write_folder = '~/Desktop/geom_dl/data/brain_data/fcs_destrieux';
 
 
 % cifti_matlab/ includes external libraries for reading .nii data. 
-addpath('/Users/maxwasserman/Documents/MATLAB/brain_data_preprocess/fc_processing/cifti_matlab')
+addpath('~/Documents/MATLAB/brain_data_preprocess/fc_processing/cifti_matlab')
 
 atlas = "desikan"; %"destrieux"
 tasktype='rfMRI_REST1'; %'tfMRI_GAMBLING'; 'tfMRI_MOTOR'; 'tfMRI_GAMBLING'; 'tfMRI_SOCIAL'; 'tfMRI_LANGUAGE';

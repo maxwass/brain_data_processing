@@ -1,10 +1,8 @@
 %% zip together sc's and fc's for dataset of (sc, fc) pairs
 
 clear all;
+fc_data_folder   = '~/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical';
 
-%fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_cortical_subcortical';
-fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical';
-desikan_data_folder = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desikan';
 %% load in relevant files
 %scs
 % all_id (1065x1 double)
@@ -68,10 +66,6 @@ for i_index = 1:num_samples
     
     %struct with variables from .mat file
     fcs_and_metadata =  matfile(subject_file);
-    if i_index ==35
-        fprintf('problem here...inspect\n');
-    end
-    
 
     fc_cov_lr = fcs_and_metadata.fc_cov_lr;
     fc_cov_rl = fcs_and_metadata.fc_cov_rl;
