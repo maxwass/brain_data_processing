@@ -1,6 +1,6 @@
 %% zip together sc's and fc's for dataset of (sc, fc) pairs
 
-clear;
+clear; clc;
 
 path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
 addpath(genpath(path2repo)); %recursively adds all repo files/folders
@@ -169,7 +169,7 @@ clear('old_fc_file')
 % INVARIANT: ith entry in final_subject_list corresponds to the ith entry in
 %             all data tensors fcs_* and *_scs
 
-save('brain_dataset_sc_fc_pairs.mat',... 
+save('data/brain_dataset_sc_fc_pairs.mat',... 
     'fcs_cov_lr', 'fcs_cov_rl',  'fcs_cov_mean',...
     'fcs_corr_lr', 'fcs_corr_rl', 'fcs_corr_mean',...
     'raw_scs', 'transform_scs',...

@@ -82,6 +82,9 @@ misc/ ==> miscellaneos files for visualizing, analysing the data, and testing ot
     subject_list_dir_debug.m
         Found repeated subject in subject_list outputed by function in hcp-batch-download repo
 
+    old_brain_data_load_script.
+        original script used for loading fcs/scs and outputing fc-sc dataset
+        dont use this
 
 
 

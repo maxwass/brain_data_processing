@@ -1,7 +1,6 @@
 %% test whether properly placed fcs and scs into dataset tensors
 
 clear;
-%path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
 path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
 addpath(genpath(path2repo)); %recursively adds all repo files/folders
 
