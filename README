@@ -1,13 +1,16 @@
 This repository is for the computation of functional connectivities (covariance matrices) for patients in the HCP_1200 dataset. There are 1113 patients in the HCP_1200 dataset. A subset of them have at least one (of two possible) fmri scans for the REST1 portion of the dataset. Each available scan is parcelized according to an atlas (Deskian or Destreuix), activity values are averaged in these parcellizations for each time point thus creating a vector observation (each entry corresponds to a brain regions). These observations are then used to compute the overall covariance matrix.
 
+If you would like to download these raw fmri/atlas files for yourself, see my other repo hcp-download-script here:
+https://github.com/maxwass/hcp-download-script
 
-Files with ** are the main files in this repo.
 
-Need to change paths in most files to accomodate to users computer.
+
+Project Layout:
 
 fc_processing/ ==> compute to fcs from the data
     compute_fcs.m **
-        Script coordinating fc computation for all patients. Saves .mat for each patient with fc's and relavatn metadata
+        Script coordinating fc computation for all patients. 
+        Saves .mat for each patient with fc's and relavatn metadata
         Needs data files to run.
         Output of this script (for desikan atlas) can be found here: 
             https://drive.google.com/drive/folders/1LQocAEeEI02704KrmIior4HEcXx8KxSk?usp=sharing
@@ -55,14 +58,12 @@ data/  ==> .mat files outputted and/or used by other scripts
         Unclear if these are if lr, rl, mean.
         Desikan atlas, subcortical nodes come LAST (69:87), corresponding patient ids in subject_list_sc
         Missing data for patients relative to scs_desikan.mat. Aka patients with scs but no fcs (here)
-            patient ids of missing data                  <-> [150019, 160931, 173233, 179548, 351938, 693461, 995174]
+            patient ids of missing data <-> [150019, 160931, 173233, 179548, 351938, 693461, 995174]
 
 
     scs_desikan.mat
         1065 87x87 structural connectivities provided by Zhengwu.
         Desikan atlas, Subcortical nodes come FIRST (1-19), corresponding patient ids in subject_list_sc
-
-
 
 
 misc/ ==> miscellaneos files for visualizing, analysing the data, and testing other scripts
@@ -85,7 +86,6 @@ misc/ ==> miscellaneos files for visualizing, analysing the data, and testing ot
     old_brain_data_load_script.
         original script used for loading fcs/scs and outputing fc-sc dataset
         dont use this
-
 
 
 Attributions
