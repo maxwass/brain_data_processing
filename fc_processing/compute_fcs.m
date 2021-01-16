@@ -1,32 +1,38 @@
 % Author: Max Wasserman, maxw14k@gmail.com, 1/15/21
 %   Modified script from Zhenghwu Zhang, now a professor at UNC
 %   With help from Marty Cole, current PhD student at UofR
-%   Use of cifti - _______
+
 
 %% setup
 clear all;
+clc;
+
+path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
+addpath(genpath(path2repo)); %recursively adds all repo files/folders
 
 % The directory brain_data/ is assumed to have a folder for each patient. The
 %  name of each directory should be exactly equal to the patient id. All
 %  files (atlas, fmri scans, etc) should reside in this top level folder 
 %  (e.g. dont make subfolder inside the subject's folder)
-datafolder = '/Volumes/Elements/brain_data';
+raw_hcp_datafolder = '/Volumes/Elements/brain_data';
 
-%Where to save matlab outputs. We save one file per patient.
+%Where to save matlab outputs. We save one .mat file per patient.
 desikan_write_folder   = '~/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical'; %subcortical first
 subcortical_first = true;
 destrieux_write_folder = '~/Desktop/geom_dl/data/brain_data/fcs_destrieux';
 
-
 % cifti_matlab/ includes external libraries for reading .nii data. 
-addpath('~/Documents/MATLAB/brain_data_preprocess/fc_processing/cifti_matlab')
+%addpath('fc_processing/cifti_matlab')
+
+
+%load subject list (list of strings of subject ids)
+load('data/hcp_1200_subject_list.mat')
+subject_list = hcp1200_subject_list; %loaded from hcp_1200_subject_list.mat
+
 
 atlas = "desikan"; %"destrieux"
 tasktype='rfMRI_REST1'; %'tfMRI_GAMBLING'; 'tfMRI_MOTOR'; 'tfMRI_GAMBLING'; 'tfMRI_SOCIAL'; 'tfMRI_LANGUAGE';
 
-%load subject list (list of strings of subject ids)
-load hcp_1200_subject_list.mat
-subject_list = hcp1200_subject_list; %loaded from hcp_1200_subject_list.mat
 
 [total_time, num_iters, num_iters_left] = deal(0.0, 0, 1114);
 
@@ -53,8 +59,8 @@ for i_index=1:length(subject_list)
     end
    
     
-    path_to_LR1 = [datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
-    path_to_RL1 = [datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
+    path_to_LR1 = [raw_hcp_datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
+    path_to_RL1 = [raw_hcp_datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
     
     %check which fmri scans exist - can have neither, one, or both
     has_LR1 = isfile(path_to_LR1);
@@ -67,7 +73,7 @@ for i_index=1:length(subject_list)
     if has_LR1
         start = tic;
         name = 'LR';
-        [fc_cov_lr, fc_corr_lr] = fmri_to_cov(atlas, path_to_LR1, subject, tasktype, datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
+        [fc_cov_lr, fc_corr_lr] = fmri_to_cov(atlas, path_to_LR1, subject, tasktype, raw_hcp_datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
         time_lr = toc(start);
         disp(['   time for LR: ' num2str(time_lr)]);   
     end
@@ -77,7 +83,7 @@ for i_index=1:length(subject_list)
     if has_RL1
         start = tic;
         name = 'RL';
-        [fc_cov_rl, fc_corr_rl] = fmri_to_cov(atlas, path_to_RL1, subject, tasktype, datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
+        [fc_cov_rl, fc_corr_rl] = fmri_to_cov(atlas, path_to_RL1, subject, tasktype, raw_hcp_datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
         time_rl = toc(start);
         disp(['   time for RL: ' num2str(time_rl)]);
     end

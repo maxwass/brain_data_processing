@@ -1,25 +1,34 @@
 %% zip together sc's and fc's for dataset of (sc, fc) pairs
 
 clear;
+
+path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
+addpath(genpath(path2repo)); %recursively adds all repo files/folders
+
+%'/fcs_desikan_subcortical_cortical' is the output of compute_fcs.m.
+% It is a directory of processed fcs. One .mat file per patient.
+%This directory is NOT included in repo: 245 MB. To download this directory:
+%https://drive.google.com/drive/folders/1LQocAEeEI02704KrmIior4HEcXx8KxSk?usp=sharing
 fc_data_folder   = '~/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical';
+
 
 %% load in relevant files
 %scs
 % subject_list (1065x1 int64)
 % scs (87x87x1065 double)
-sc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/scs_desikan.mat');
+sc_file = load('data/scs_desikan.mat');
 SCs = sc_file.scs; 
 subject_list_sc = sc_file.subject_list;
 
 % new FCs (downloaded from HCP_1200 server and did local computation)
 % hcp1200_subject_list (1x1113 double): 
-load hcp_1200_subject_list.mat %subjList
+load('data/hcp_1200_subject_list.mat'); %subjList
 subject_list_hcp1200 = int64(double(string(hcp1200_subject_list))); % (1113x1 double)
 clear('hcp1200_subject_list')
 
 % exist_any_fc_and_sc (1064x1 int64)  subjects with fc(s) and sc
 % exist_both_fc_and_sc (1051x1 int64)  subjects with both fcs and sc
-load fc_and_sc_sets.mat
+load('data/fc_and_sc_sets.mat');
 missing_one_scan = setdiff(exist_any_fc_and_sc, exist_both_fc_and_sc);
 
 %switch this if only like to consider patients with both functional scans
@@ -140,7 +149,7 @@ clear fcs_and_metadata
 %OLD correlation fcs file 
 % ChosenROI_cortical (1x68 double)
 % ChosenROI_subcortical (1x68 double)
-old_fc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/correlations_desikan_old.mat');
+old_fc_file = load('data/correlations_desikan_old.mat');
 ChosenROI_cortical = old_fc_file.ChosenROI_cortical;
 ChosenROI_subcortical = old_fc_file.ChosenROI_subcortical;
 clear('old_fc_file')

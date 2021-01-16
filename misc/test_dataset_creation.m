@@ -1,6 +1,10 @@
 %% test whether properly placed fcs and scs into dataset tensors
 
-clear all;
+clear;
+%path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
+path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
+addpath(genpath(path2repo)); %recursively adds all repo files/folders
+
 
 %dataset variables
 % fcs_* - tensor of fc matrices
@@ -15,7 +19,7 @@ fc_data_folder   = '/Users/maxwasserman/Desktop/geom_dl/data/brain_data/fcs_desi
 %scs
 % subject_list (1065x1 int64)
 % scs (87x87x1065 double)
-sc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/scs_desikan.mat');
+sc_file = load('data/scs_desikan.mat');
 SCs = sc_file.scs; 
 subject_list_sc = sc_file.subject_list;
 

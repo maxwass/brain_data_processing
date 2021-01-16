@@ -1,4 +1,6 @@
 %% compare two datasets
+path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
+addpath(genpath(path2repo)); %recursively adds all repo files/folders
 
 close all;
 clear all;
@@ -16,30 +18,13 @@ clear('mode3', 'loaded_bin_network_sub', 'all_id','loaded_tensor_sub'); %unused 
 
 
 % OLD provided FCS
-old_fc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/correlations_desikan_old.mat');
+old_fc_file = load('data/correlations_desikan_old.mat');
 %given_fcs  = all_fc;
 subject_list_old_fc = int64(old_fc_file.subject_list);
 FCs = old_fc_file.fcs; %(87x87x1058 double)
 clear old_fc_file
 
-%make new tensor same shape as scs and fill missing entries with NaN matrix
-FCs_with_nans = zeros(87,87,1065);
-missing_data = [239,297,351,387,639,870,1064];
-i_sub_index = 1;
-for i_index = 1:len(subject_list_old_fc)
-    fc = given_fcs(i_index);
-    
-    if isempty(fc{1}) %all_ismember(i_index, missing_data) %better to check if all_fc(i_index) is empty
-        %put in all nana
-        FCs_with_nans(:,:,i_index) = nan(87,87);
-    else
-        FCs_with_nans(:,:,i_index) = FCs(:,:,i_sub_index);
-        i_sub_index = i_sub_index + 1;
-    end
-end
 
-data_folder     = '~/Documents/MATLAB/brain_data_preprocess/data';
-addpath(data_folder);
 computed_fcs_given_scs =  load("data/brain_dataset_sc_fc_pairs.mat");
 
 % NEW computed FCs
@@ -61,7 +46,7 @@ fprintf('%dth patient %d...\n',j_index, subject);
 %create plot with 2x3 tiles
 %first row being full 87x87 sc, old fc, new fc
 %second row being only cortical 68x68 sc, old fc, new fc
-fig = figure()%('visible','off');
+fig = figure();%('visible','off');
 
 t = tiledlayout(2,3,'TileSpacing','Compact','Padding','Compact');
 title(t,txt, 'FontSize', 25)
@@ -77,13 +62,13 @@ nexttile
 index_in_subject_list_old_fc = int64(find(subject_list_old_fc == subject));
 old_corr = FCs(:,:,index_in_subject_list_old_fc);
 imshow(abs(old_corr));
-title('|FC OLD Corr|','FontSize', 15);
+title('|FC OLD Corr| -lr,rl,mean?','FontSize', 15);
 
 nexttile
 index_in_subject_list_new = int64(find(subject_list_new == subject));
 new_corr = fcs_corr_mean(:,:,index_in_subject_list_new);
 imshow(abs(new_corr));
-title('|FC NEW Correlation|','FontSize', 15);
+title('|FC NEW Correlation| - mean','FontSize', 15);
 
 %only cortical
 nexttile
@@ -110,9 +95,10 @@ imshow(abs(new_corr_cortical));
 %title('FC cortical NEW Correlation','FontSize', 15);
 
 
-%tensor of only old correlation repeated
-%old_corr_cortical_repeat = repmat(old_corr_cortical, 1,1,1058);
-%new_corr_cortical_repeat = 
+% add color bar. All values between 0/1
+
+
+
 fn = plot_write_path + "/" + string(subject) + ".jpg";
 exportgraphics(t,fn,'BackgroundColor','white')
 

@@ -1,8 +1,10 @@
+path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
+addpath(genpath(path2repo)); %recursively adds all repo files/folders
 
 %scs
 % subject_list (1065x1 int64)
 % scs (87x87x1065 double)
-sc_file = load('~/Documents/MATLAB/brain_data_preprocess/data/scs_desikan.mat');
+sc_file = load('data/scs_desikan.mat');
 SCs = sc_file.scs; 
 subject_list_sc = sc_file.subject_list;
 
