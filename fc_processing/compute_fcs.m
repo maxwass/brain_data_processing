@@ -17,6 +17,8 @@ addpath(genpath(path2repo)); %recursively adds all repo files/folders
 raw_hcp_datafolder = '/Volumes/Elements/brain_data';
 
 %Where to save matlab outputs. We save one .mat file per patient.
+
+%UPDATE THIS TO BE LOCAL FOLDER
 desikan_write_folder   = '~/Desktop/geom_dl/data/brain_data/fcs_desikan_subcortical_cortical'; %subcortical first
 subcortical_first = true;
 destrieux_write_folder = '~/Desktop/geom_dl/data/brain_data/fcs_destrieux';

@@ -1,8 +1,10 @@
 This repository is for the computation of functional connectivities (covariance matrices) for patients in the HCP_1200 dataset. There are 1113 patients in the HCP_1200 dataset. A subset of them have at least one (of two possible) fmri scans for the REST1 portion of the dataset. Each available scan is parcelized according to an atlas (Deskian or Destreuix), activity values are averaged in these parcellizations for each time point thus creating a vector observation (each entry corresponds to a brain regions). These observations are then used to compute the overall covariance matrix.
 
 If you would like to download these raw fmri/atlas files for yourself, see my other repo hcp-download-script here:
-https://github.com/maxwass/hcp-download-script
+    https://github.com/maxwass/hcp-download-script
 
+If you would like to read more about this data and how it was collected, see the review paper:
+    https://pubmed.ncbi.nlm.nih.gov/22366334/
 
 
 Project Layout:
@@ -121,3 +123,10 @@ The minimal preprocessing pipelines for the Human Connectome Project. Neuroimage
 -Jenkinson M, Bannister PR, Brady JM, and Smith SM. (2002). Improved optimisation for the robust and accurate linear registration and motion correction of brain images. NeuroImage 17(2):825-841.
 
 -Glasser MF, and Van Essen DC. (2011). Mapping human cortical areas in vivo based on myelin content as revealed by T1- and T2-weighted MRI. J Neurosci. 31:11597-11616
+
+
+Links to HCP compliance rules
+    https://www.humanconnectome.org/study/hcp-young-adult/document/wu-minn-hcp-consortium-open-access-data-use-terms
+    https://www.humanconnectome.org/study/hcp-young-adult/document/hcp-citations
+
+
