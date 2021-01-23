@@ -20,6 +20,10 @@ fc_processing/ ==> compute to fcs from the data
     fmri_to_cov.m **
         Maps a single fmri scan (LR or RL) with its corresponding atlas raw to an fc.
         Needs raw data fmri/atlas files to run.
+ 
+    load_fmri.m
+        Takes raw fmri/atlas file, averages activity in atlas brain regions.
+        Returns N x num_observations matrix - each column is a vector observation
     
     sc_fc_dataset.m **
         Create large tensors of fcs, scs, and metadata into a .mat file
@@ -72,7 +76,7 @@ misc/ ==> miscellaneos files for visualizing, analysing the data, and testing ot
     data_accounting.m **
         Analysis on what data we have for each patients, and which scans are needed
     
-    test_dataset_creation.m
+      test_dataset_creation.m
         Ensure data placed into dataset tensors properly by reloading the raw .mat file and comparing
     
     compare_datasets.m
@@ -88,6 +92,14 @@ misc/ ==> miscellaneos files for visualizing, analysing the data, and testing ot
     old_brain_data_load_script.
         original script used for loading fcs/scs and outputing fc-sc dataset
         dont use this
+
+fc_trajectory ==> visualize how fcs changes at small windows along time series
+    fc_trajectory.m
+        Creates directory of lr/rl jpgs showing fc trajectory windowed fcs). 
+
+    windowed_fcs.m
+        Takes data for a single patients lr or rl fmri data, and computes plot of windowed fcs.
+
 
 
 
