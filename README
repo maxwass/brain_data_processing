@@ -54,9 +54,9 @@ data/  ==> .mat files outputted and/or used by other scripts
 
     subject_missing_fc_data.mat
         Set of patient ids
-            missing_LR = all patients w/o an LR scan for REST1
-            missing_RL = all patients w/o an RL scan for REST1
-            missing_LR_and_RL = patients missing both LR and RL scans for REST1 (interesection of prev sets)
+            missing_LR = all patients in hcp_1200  w/o an LR scan for REST1
+            missing_RL = all patients in hcp_1200 w/o an RL scan for REST1
+            missing_LR_and_RL = patients in hcp_1200 missing LR & RL for REST1 (interesect of prev sets)
             type = string indicating which fmri data is being referenced
 
     correlations_desikan_old.mat
@@ -100,6 +100,8 @@ fc_trajectory ==> visualize how fcs changes at small windows along time series
     windowed_fcs.m
         Takes data for a single patients lr or rl fmri data, and computes plot of windowed fcs.
 
+    *.mlapp
+        Explore averages of fmri data over windows and viz fc vs GFT of normalized windowed signal on many GSOs
 
 
 

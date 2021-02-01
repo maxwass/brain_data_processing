@@ -44,7 +44,7 @@ end
 
 %% initialize data structure dtseries ('data time series'?) for storing observations
 nTR = size(subj_tdata.dtseries,2); %number of observations
-dtseries = zeros(nROIChosenROI,nTR);
+dtseries = double(zeros(nROIChosenROI,nTR));
 disp(['   ' name ' has ' num2str(nTR) ' timepoints']);
 
 %% loop over each brain region and insert all observations for region into row of dtseries
