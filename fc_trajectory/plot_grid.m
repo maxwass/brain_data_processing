@@ -6,10 +6,9 @@ function plot_grid(app)
 % -first time running
 % -some parameter has changed (e.g. windowsize, movesize, etc)
 
-change_flag = app.tiled_axes;
 sz = [int64(app.NumWindowPlotSpinner.Value), app.cols];
-if app.tiled_axes==-1
-    app.tile_plot = tiledlayout(app.Panel, int64(app.NumWindowPlotSpinner.Value), app.cols,'TileSpacing','compact','Padding','none');
+if app.change_axes==true
+    app.tile_plot = tiledlayout(app.Panel, int64(app.NumWindowPlotSpinner.Value) + 1, app.cols,'TileSpacing','compact','Padding','none');
     app.tiled_axes = gobjects(int64(app.NumWindowPlotSpinner.Value), app.cols);
     for row = 1:int64(app.NumWindowPlotSpinner.Value)
         for col = 1:app.cols
@@ -18,6 +17,14 @@ if app.tiled_axes==-1
         end
     end
 end
+app.change_axes=false;
+
+
+%place scalar summary plots in first row
+scalar_plot_ax = nextile(1, [1, 2]);
+x = 1:app.num_windows;
+compute_values
+
 
 
 
@@ -32,12 +39,18 @@ else
 	error('Unrecognized FC selection %s\n', which_fc)
 end
 
+[N, ~, ~] = size(fcs);
+zero_diag = ones(N) - eye(N);
 
-row = 0;
+row=1;
 for i = app.low_index:app.high_index
 	row = row + 1;
 	ax = app.tiled_axes(row,col);%nexttile(app.tile_plot, idx);
-	imagesc(ax, fcs(:,:,i));
+    fc = fcs(:,:,i);
+	imagesc(ax, fc);
+    
+    total_func_covar = sum(fc.*zero_diag, 'all')/2;
+    
 	
     set(ax,'xticklabel',[]); set(ax,'yticklabel',[]);
     yl = sprintf('%d',i);
@@ -59,7 +72,7 @@ percentile = app.fcscolorsSpinner.Value;
 [cl] = ceil(find_cov_clim(fcs, percentile));
 set(fc_axes, 'ColorMap', app.colormap_file.colorMap);
 set(fc_axes,'CLim',[-cl cl]);
-cbar = colorbar(fc_axes(end),'SouthOutside');
+cbar = colorbar(fc_axes(end),'West');
 title(fc_axes(1), which_fc,'FontSize', 15);
 linkaxes(fc_axes,'xy');
            
@@ -89,7 +102,7 @@ for i = num_jumps_delete:-1:1
     plot_eigs(left_idx_largest_diffs(i)+1:end) = plot_eigs(left_idx_largest_diffs(i)+1:end) - (largest_diffs(i) - space);
 end
 
-row=0;
+row=1;
 % place plots
 for i = app.low_index:app.high_index
 	row = row + 1;

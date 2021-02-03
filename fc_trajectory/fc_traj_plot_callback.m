@@ -7,9 +7,19 @@ if strcmp(app.PlaySwitch.Value,'Play')
     jumpsize = int64(app.JumpSpinner.Value);
     % num_windows is the total # windows in fc trajectory, nothing to do
     % with plotting
-    app.low_index     = mod(app.low_index + jumpsize, app.num_windows);
-    app.high_index    = mod(app.low_index + app.num_windows_plot-1, app.num_windows);
-    plot_grid(app);
+    if app.high_index==app.num_windows % old high index at the end?
+    	app.low_index  = 1;
+        app.high_index = int64(app.NumWindowPlotSpinner.Value);
+	elseif (app.high_index+jumpsize) > app.num_windows % will new high index out of range?
+        app.low_index = app.num_windows-int64(app.NumWindowPlotSpinner.Value)+1;
+        app.high_index = app.num_windows;
+    else
+        app.low_index  = app.low_index + jumpsize;
+        app.high_index = app.high_index + jumpsize;
+    end
+
+	plot_grid(app)
+	app.WindowSlider.Value=double(app.low_index);
     
 end
 

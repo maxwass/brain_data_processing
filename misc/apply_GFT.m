@@ -2,29 +2,9 @@ function [signals_freq, GFT, evals] = apply_GFT(signals,subject,atlas, include_s
 %Applies GFT to matrix of signals (each column is a signal)
 % subject = string subject identifier
 
-    
-%% load scs
-if atlas=="desikan"
-    scs_file = load('scs_desikan.mat');
-elseif atlas=="destrieux"
-    scs_file = load('scs_desikan.mat');
-else
-    error("NOT IMPLIMENTED")
-end
-    
 
-%% find index of subject in tensor
-idx = find(scs_file.subject_list==int64(str2num(subject)));
-A_full_raw = scs_file.scs(:,:,idx);
-A_full_transform = log(A_full_raw+A_full_raw' +1); %transform reccomended by Zhengwu
-
-A_cortical_transform = A_full_transform(20:end, 20:end);
-
-if include_subcortical == 1
-    A = A_full_transform;
-else
-    A = A_cortical_transform;
-end
+%load scs from saved tensor file
+A = extract_sc(subject, atlas, include_subcortical);
 
 %% compute GFT and freqs
 D_vec  = sum(A,2);
