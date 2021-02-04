@@ -8,24 +8,39 @@ function plot_grid(app)
 
 sz = [int64(app.NumWindowPlotSpinner.Value), app.cols];
 if app.change_axes==true
+    
     app.tile_plot = tiledlayout(app.Panel, int64(app.NumWindowPlotSpinner.Value) + 1, app.cols,'TileSpacing','compact','Padding','none');
     app.tiled_axes = gobjects(int64(app.NumWindowPlotSpinner.Value), app.cols);
-    for row = 1:int64(app.NumWindowPlotSpinner.Value)
+    for row = 1:(int64(app.NumWindowPlotSpinner.Value)+1)
         for col = 1:app.cols
             %lin_idx = (row-1)*app.cols + col;
             app.tiled_axes(row,col)= nexttile(app.tile_plot);
         end
     end
+    
+    scalar_plot_ax      = nexttile(app.tile_plot, 1, [1 2]);
+    app.tiled_axes(1,1) = scalar_plot_ax;
+    plot_scalars(scalar_plot_ax, app.aw, app.aw_freq_reprs, app.covs, app.corrs)
+    text(scalar_plot_ax,  double(app.low_index),  -3, 'L', 'Color', 'magenta', 'FontSize', 18);
+    text(scalar_plot_ax,  double(app.high_index), -3, 'H', 'Color', 'blue',   'FontSize', 18);
+    xticks(scalar_plot_ax, 1:2:app.num_windows)
+    %set(ax, 'XTick', 1:20:num_windows)
 end
-app.change_axes=false;
-
 
 %place scalar summary plots in first row
-scalar_plot_ax = nextile(1, [1, 2]);
-x = 1:app.num_windows;
-compute_values
-
-
+%add marker to x axis to denote low and high idxs
+scalar_plot_ax = app.tiled_axes(1,1);
+scalar_plot_ch = get(scalar_plot_ax,'Children');
+for idx_ch = 1:length(scalar_plot_ch)
+    ch = scalar_plot_ch(idx_ch);
+    if isa(ch, 'matlab.graphics.primitive.Text')
+        if strcmp(ch.String, 'L')
+            ch.Position = [app.low_index, -3, 0];
+        elseif strcmp(ch.String, 'H')
+            ch.Position = [app.high_index, -3, 0];
+        end
+    end
+end
 
 
 %% first column is FC column...plot correlation because easier to viz
@@ -49,8 +64,6 @@ for i = app.low_index:app.high_index
     fc = fcs(:,:,i);
 	imagesc(ax, fc);
     
-    total_func_covar = sum(fc.*zero_diag, 'all')/2;
-    
 	
     set(ax,'xticklabel',[]); set(ax,'yticklabel',[]);
     yl = sprintf('%d',i);
@@ -58,6 +71,11 @@ for i = app.low_index:app.high_index
     ylp = get(ylh, 'Position');
     ext = get(ylh,'Extent');
     set(ylh, 'Rotation',0, 'Position',ylp-[2*ext(3) 0 0])
+    if i==app.low_index
+        set(ylh, 'Color', 'magenta');
+    elseif i==app.high_index
+        set(ylh, 'Color', 'blue');
+    end
 	
     
     xlim(ax,[1,length(app.eigvals)]); xlim(ax,'manual');
@@ -67,12 +85,13 @@ for i = app.low_index:app.high_index
     
     
 end
-fc_axes = app.tiled_axes(:,1);
+fc_axes = app.tiled_axes(2:end,1);
 percentile = app.fcscolorsSpinner.Value; 
-[cl] = ceil(find_cov_clim(fcs, percentile));
+[cl] = find_cov_clim(fcs, percentile); %ciel needed?
 set(fc_axes, 'ColorMap', app.colormap_file.colorMap);
 set(fc_axes,'CLim',[-cl cl]);
-cbar = colorbar(fc_axes(end),'West');
+cb = colorbar(fc_axes(end),'West');
+%cb.Layout.Tile = 'west';
 title(fc_axes(1), which_fc,'FontSize', 15);
 linkaxes(fc_axes,'xy');
            
@@ -122,7 +141,7 @@ for i = app.low_index:app.high_index
     text(ax, 'String', str, 'Units', 'normalized', 'Position', [.6, .95])
 	%xlabel(ax,'freq');
 end
-freq_axes = app.tiled_axes(:,2);
+freq_axes = app.tiled_axes(2:end,2);
 linkaxes(freq_axes,'xy');
 
 % place vertical lines denoting where jumps were made

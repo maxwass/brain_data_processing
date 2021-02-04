@@ -7,12 +7,7 @@ function [signals_freq, GFT, evals] = apply_GFT(signals,subject,atlas, include_s
 A = extract_sc(subject, atlas, include_subcortical);
 
 %% compute GFT and freqs
-D_vec  = sum(A,2);
-D = diag(D_vec);
-D_norm = diag(D_vec.^(-.5));
-L = D-A;
-L_norm = D_norm*L*D_norm;
-A_norm = D_norm*A*D_norm;
+[A_norm, L, L_norm] = compute_GSOs(A);
 
 if strcmp(GSO, 'A')
     [evecs, evals] = eig(A);
