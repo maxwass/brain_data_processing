@@ -86,9 +86,9 @@ num_freqs_high   = best_high_idx;
 
 %% perform plotting on given ax
 yyaxis(ax,'left'); %main metric on left
-plot(ax, (cov_energy-mean(cov_energy))/100, '-k', 'LineWidth', 1, 'DisplayName', 'cov energy/100');
+plot(ax, (cov_energy-mean(cov_energy))/100, '-k', 'LineWidth', 1, 'DisplayName', 'windowed cov energy/100');
 hold(ax, 'on');
-plot(ax, (signals_energy-mean(signals_energy)), '--k', 'LineWidth', 1, 'DisplayName', 'windowed signal energy');
+plot(ax, (signals_energy-mean(signals_energy)), '-b', 'LineWidth', 1, 'DisplayName', 'windowed signal energy');
 
 %plot(ax, energy_wo_diag-mean(energy_wo_diag), '--k', 'LineWidth', 1, 'DisplayName', 'energy w/o diag (self cov)');
 set(ax, 'YColor', 'k') % set y axis color to same as line color
