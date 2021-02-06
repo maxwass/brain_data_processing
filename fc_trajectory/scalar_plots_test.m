@@ -29,7 +29,8 @@ dtseries_center     = dtseries - mean_signal;
 windowsize = 20;
 movesize = 5;
 
-[covs, corrs, aw]   = windowed_fcs(dtseries_center, windowsize, movesize);
+[covs, aw]   = windowed_fcs(dtseries_center, windowsize, movesize);
+corrs = corrcov_tensor(covs);
 [N, ~, num_windows] = size(covs);
 
 %% load scs from saved tensor file

@@ -106,7 +106,8 @@ for i_index=1:length(subject_list)
         start = tic;
         dtseries_lr = load_fmri(atlas, path2fmri, subject, tasktype, raw_hcp_datafolder, name, chosen_roi.cortical, chosen_roi.subcortical);
         %created windowed fcs and ave signals
-        [~, fc_corr_w, ave_signals_w] = windowed_fcs(dtseries_lr, fc_traj_params.windowsize, fc_traj_params.movesize);
+        [fc_cov_w, ave_signals_w] = windowed_fcs(dtseries_lr, fc_traj_params.windowsize, fc_traj_params.movesize);
+        fc_corr_w = corrs_tensor(fc_corr_w);
         size_fc = size(fc_corr_w);
         time = toc(start);
         disp(['   time for ' name ' load + windowing: ' num2str(time)]);

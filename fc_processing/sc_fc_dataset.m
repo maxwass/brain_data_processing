@@ -2,9 +2,6 @@
 
 clear; clc;
 
-path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
-addpath(genpath(path2repo)); %recursively adds all repo files/folders
-
 %'/fcs_desikan_subcortical_cortical' is the output of compute_fcs.m.
 % It is a directory of processed fcs. One .mat file per patient.
 %This directory is NOT included in repo: 245 MB. To download this directory:

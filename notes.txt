@@ -1,0 +1,3 @@
+partial function application in matlab
+    -doesn't directly support this, but can use anonymous functions to do it
+    https://stackoverflow.com/questions/9154271/partial-function-evaluation-in-matlab

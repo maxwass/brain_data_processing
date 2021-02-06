@@ -7,9 +7,6 @@
 clear all;
 clc;
 
-path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
-addpath(genpath(path2repo)); %recursively adds all repo files/folders
-
 % The directory brain_data/ is assumed to have a folder for each patient. The
 %  name of each directory should be exactly equal to the patient id. All
 %  files (atlas, fmri scans, etc) should reside in this top level folder 

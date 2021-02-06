@@ -23,6 +23,7 @@ nROIChosenROI = length(ChosenROI_cortical) + length(ChosenROI_subcortical); %68 
 % (note: here LR stands for left and right hemispheres, NOT phase
 % encoding - aka directionality of scanning left to right or right to
 % left.)
+startload = tic;
 if(strcmp(atlas,"desikan"))
     subjlab = ft_read_cifti([datafolder '/' subject '/' subject '.aparc.32k_fs_LR.dlabel.nii']);
     segmentation_atlas = eval(['subjlab.x' num2str(subject) '_aparc']);
@@ -32,7 +33,7 @@ elseif(strcmp(atlas,"destrieux"))
 else
     error("Atlas " + atlas + " not found. Use Desikan or destrieux.")
 end
-    
+
     
 %% load fMRI data
 if(strcmp(tasktype,'rfMRI_REST1'))
@@ -41,15 +42,19 @@ if(strcmp(tasktype,'rfMRI_REST1'))
 else
     error('only REST1 handled at the moment')
 end
+stopload = toc(startload);
+fprintf('time for loading file: %.2f\n', stopload);
 
 %% initialize data structure dtseries ('data time series'?) for storing observations
 nTR = size(subj_tdata.dtseries,2); %number of observations
 dtseries = double(zeros(nROIChosenROI,nTR));
 disp(['   ' name ' has ' num2str(nTR) ' timepoints']);
 
+
 %% loop over each brain region and insert all observations for region into row of dtseries
 total_ROIs = length(ChosenROI_subcortical) + length(ChosenROI_cortical);
 
+startprocess = tic;
 for roi_index = 1:total_ROIs
     if roi_index <= 19 %subcortical
         roi = ChosenROI_subcortical(roi_index);
@@ -69,6 +74,8 @@ for roi_index = 1:total_ROIs
     dtseries(roi_index,:) = mean(subj_tdata.dtseries(indices,:),1);
 end
 
+stopprocess = toc(startprocess);
+fprintf('time for processing data: %.2f\n', stopprocess);
 
     
 end

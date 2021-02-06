@@ -22,16 +22,14 @@ else
 end
 
 %eigenvalues in sorted order
-[d,ind] = sort(diag(evals));
+[~,ind] = sort(diag(evals));
 evals = evals(ind,ind);
 evecs = evecs(:,ind);
 
-GFT = transpose(evecs);
+GFT = transpose(evecs); % GFT == V^H
 
 
 %% apply GFT
 signals_freq = GFT*signals;
-
-clear scs_file
 end
 
