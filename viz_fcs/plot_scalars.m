@@ -21,10 +21,10 @@ if isequal(which_scalars, "energy")
     [mpf_signal] = freq_filter(signals_freq, med_freq_interval);
     [hpf_signal] = freq_filter(signals_freq, high_freq_interval);
 
-    energy = vecnorm(signals_freq,2);
-    lpf_energy = vecnorm(lpf_signal,2);
-    mpf_energy = vecnorm(mpf_signal,2);
-    hpf_energy = vecnorm(hpf_signal,2);
+    energy = vecnorm(signals_freq,2).^2;
+    lpf_energy = vecnorm(lpf_signal,2).^2;
+    mpf_energy = vecnorm(mpf_signal,2).^2;
+    hpf_energy = vecnorm(hpf_signal,2).^2;
     
     yyaxis(ax,'left'); %main metric on left
     plot(ax, energy, 'k', 'LineWidth', 1, 'DisplayName', 'signal energy');
@@ -68,7 +68,7 @@ elseif isequal(which_scalars, "cov_traj")
     yyaxis(ax,'left'); %main metric on left
     plot(ax, max_eigs(1,:), 'k', 'LineWidth', 1, 'DisplayName', '1 max |eigs|');
     hold(ax,'on');
-    plot(ax, max_eigs(2,:), 'k-','LineWidth', 1, 'DisplayName', '2 max |eigs|');
+    plot(ax, max_eigs(2,:), 'k:','LineWidth', 1, 'DisplayName', '2 max |eigs|');
     ylabel(ax, 'Max Eigs', 'FontSize', 15);
     set(ax, 'YColor', 'k')
     

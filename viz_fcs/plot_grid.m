@@ -74,9 +74,9 @@ for idx_ch = 1:length(scalar_plot_ch)
     ch = scalar_plot_ch(idx_ch);
     if isa(ch, 'matlab.graphics.primitive.Text')
         if strcmp(ch.String, 'L')
-            ch.Position = [low_index, -3, 0];
+            ch.Position = [low_index, 0, 0];
         elseif strcmp(ch.String, 'H')
-            ch.Position = [high_index, -3, 0];
+            ch.Position = [high_index, 0, 0];
         end
     end
 end
@@ -191,9 +191,18 @@ for j = num_jumps_delete:-1:1
 	text(freq_axes(end), (x0+x1)/2,app.y_min+(ax_offset/2)+text_offset,gap, 'FontSize',10);
 end
 
-xticks(freq_axes(end), plot_eigs)
-xticklabels(freq_axes(end), app.eig_labels)
-xtickangle(freq_axes(end), 45)
+%make odd plots have xticks as the idxs
+xticks(freq_axes(1:2:end), plot_eigs);
+xticklabels(freq_axes(1:2:end), app.eig_idxs);
+xlabel(freq_axes(1:2:end), 'Eigval IDX');
+xtickangle(freq_axes(1:2:end), 45)
+%make even plots have the xticks as the eigenvalues
+xticks(freq_axes(2:2:end), plot_eigs)
+xticklabels(freq_axes(2:2:end), app.eig_labels)
+xtickangle(freq_axes(2:2:end), 45)
+xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
+
+
 freq_title = sprintf("GFT of %s (x wind - total mean) on %s", app.NormFreqReprButtonGroup.SelectedObject.Text,  app.GSOButtonGroup.SelectedObject.Text);
 title(freq_axes(1), freq_title,'FontSize', 15);
 
