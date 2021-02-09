@@ -8,14 +8,15 @@ end
 
 %% load scs
 if atlas=="desikan"
-    if exist('scs_file','var')
-        if ~strcmp(scs_file.atlas, atlas)
+    
+    % if file dne or it exists but wrong atlas...
+    if ~exist('scs_file','var') || ~strcmp(scs_file.atlas, atlas)
             scs_file = load('scs_desikan.mat');
         
             %put into workspace so don't have to keep reloading.
             assignin('base', 'scs_file', scs_file)
-        end
     end
+
 elseif atlas=="destrieux"
     error("NOT IMPLIMENTED")
 else

@@ -40,5 +40,5 @@ for which_slice = 1:M
     out_tensor(out_slice_idxs{:}) = f(in_slice);
 end
 
-%squeeze out_tensor to get rid of possible singleton dimension??
-
+%remove possible singleton dimension - if output of f() is a vector
+out_tensor = squeeze(out_tensor);

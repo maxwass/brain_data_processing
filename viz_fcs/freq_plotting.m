@@ -1,6 +1,5 @@
 %freq plots
-path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
-addpath(genpath(path2repo));
+clear; clc; close all;
 
 atlas = "desikan"; %"destrieux"
 tasktype='rfMRI_REST1';
@@ -12,51 +11,51 @@ subject_list = int2str(brain_dataset.final_subject_list); %all subjects with scs
 subject = subject_list(1,:);
 path_to_LR1 = [raw_hcp_datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
 path_to_RL1 = [raw_hcp_datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
-name = 'LR';
-path2fmri = path_to_LR1;
-if exist('dtseries_lr','var') ==0
-    dtseries_lr = load_fmri(atlas, path2fmri, subject, tasktype, raw_hcp_datafolder, name, chosen_roi.cortical, chosen_roi.subcortical);
-    [~, fc_corr_lr, ave_signals_lr] = windowed_fcs(dtseries_lr, fc_traj_params.windowsize, fc_traj_params.movesize);
-end
-name = 'RL';
-path2fmri = path_to_RL1;
-if exist('dtseries_rl','var') ==0
-    dtseries_rl = load_fmri(atlas, path2fmri, subject, tasktype, raw_hcp_datafolder, name, chosen_roi.cortical, chosen_roi.subcortical);
-    [~, fc_corr_rl, ave_signals_rl] = windowed_fcs(dtseries_rl, fc_traj_params.windowsize, fc_traj_params.movesize);
-end
 
-
+chosen_roi = load('data/desikan_roi', 'roi').roi;
+%chosen_roi.subcortical = [];
 include_subcortical = false;
-A_full = brain_dataset.transform_scs(:,:,i_index);
-A_cortical = A_full(20:end,20:end);
-if include_subcortical ==1
-    A = A_full;
-else
-    A = A_cortical;
-end
+GSO = "L";
 
+[windowsize, movesize] = deal(30, 20);
+
+path2fmri = path_to_LR1;
+
+
+[dtseries]    = process_fmri(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi);
+
+%mean center
+dtseries = dtseries - mean(dtseries,2);
+
+[signal_windows] = windowed_signals(dtseries, windowsize, movesize);
+[fc_covs]     = construct_fcs(signal_windows);
+[fc_corr]     = apply_to_tensor_slices(@corrcov, fc_covs);
+col_mean      = @(x) mean(x,2);
+[ave_signals] = apply_to_tensor_slices(col_mean, signal_windows);
+
+if ~include_subcortical
+    cortical_indices = {'20:end','20:end',':'};
+    dtseries       = dtseries(20:end, :);
+    signal_windows = signal_windows(20:end, :, :);
+    fc_covs        = fc_covs(20:end,20:end, :);
+    fc_corr        = fc_corr(20:end,20:end, :);
+    ave_signals    = ave_signals(20:end, :);
+end
 
 %% GFT computation
-D_vec  = sum(A,2);
-D = diag(D_vec);
-D_norm = diag(D_vec.^(-.5));
-L = D-A;
-L_norm = D_norm*L*D_norm;
-[evecs, evals] = eig(L);
-GFT = transpose(evecs);
+%[all_signals_freq, ~, ~]       = apply_GFT(dtseries,    subject, atlas, include_subcortical, GSO);
+[ave_signals_freq, GFT, evals] = apply_GFT(ave_signals, subject, atlas, include_subcortical, GSO);
 
-%% transform into GF space with GFT
+%plot scalars!
+ax = axes;
+%plot_scalars(ax, dtseries, all_signals_freq, covs, corrs, S); %adjust this for all signals!
+S = extract_sc(subject, atlas, include_subcortical);
+plot_scalars(ax, ave_signals, ave_signals_freq, fc_covs, fc_corr, S);
 
-if include_subcortical==1
-    ave_signals_freq_lr = GFT*ave_signals_lr; %cols are signals
-    ave_signals_freq_rl = GFT*ave_signals_rl; %cols are signals
-else
-    ave_signals_freq_lr = GFT*ave_signals_lr(20:end,:); %cols are signals
-    ave_signals_freq_rl = GFT*ave_signals_rl(20:end,:); %cols are signals
-end
 
+%{
 %% Which signal windows are the most similar? EXCLUDE ZERO FREQ COMPONENT
-D   = pdist(ave_signals_freq_lr(2:end,:)', 'euclidean');
+D   = pdist(signals_freq(2:end,:)', 'euclidean');
 D_s = squareform(D);
 %h   = heatmap(D_s);
 
@@ -73,15 +72,13 @@ Y = tsne(ave_signals_freq_lr(2:end,:)','Algorithm','barneshut','NumPCAComponents
 [idx,C] = kmeans(X,2);
 
 %% Plot freq representation
-lr_norms = sqrt(sum(ave_signals_freq_lr.^2, 1)); %should i disregard 0 freq component?
-rl_norms = sqrt(sum(ave_signals_freq_rl.^2, 1));
+norms = sqrt(sum(ave_signals_freq.^2, 1)); %should i disregard 0 freq component?
 
 %divide each column by respective norm
-ave_signals_freq_lr_norm = bsxfun(@rdivide, ave_signals_freq_lr, lr_norms);
-ave_signals_freq_rl_norm = bsxfun(@rdivide, ave_signals_freq_rl, rl_norms);
+signals_freq_norm = bsxfun(@rdivide, ave_signals_freq, norms);
 
 %find max for fixed y axis limits (excluding 0 component)
-sig_concat = abs([ave_signals_freq_lr_norm, ave_signals_freq_rl_norm]);
+sig_concat = abs([signals_freq_norm, ave_signals_freq_rl_norm]);
 y_max = max(max(sig_concat(2:end,:)));
 
 evals = diag(evals);
@@ -91,7 +88,7 @@ t = tiledlayout(2,num_windows);
 
 for idx = 1:num_windows
     nexttile(t)
-    f_lr = abs(ave_signals_freq_lr_norm(:,idx));
+    f_lr = abs(signals_freq_norm(:,idx));
     s_lr = stem(evals(2:end), f_lr(2:end), 'MarkerEdgeColor','green','color', 'k');
     ylim([0, y_max])
     %freq_mag_lr = ave_signals_freq_lr(:,idx)/norm(ave_signals_freq_lr(2:end,idx));
@@ -114,3 +111,4 @@ for idx = 1:num_windows
     end
     title(sprintf('RL1: Window %d', idx));
 end
+%}

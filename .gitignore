@@ -1,4 +1,10 @@
 brain_data/
+cached_desikan/
+data/brain_dataset_sc_fc_pairs.mat
+data/fcs_desikan_subcortical_cortical/
+data/old_brain_datataset_corr.mat
+example_brain_data/
+
 .DS_Store
 Correlation_Calculation/CalculateFunctionConnectivity_MMP.m~
 *~

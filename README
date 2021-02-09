@@ -21,7 +21,7 @@ fc_processing/ ==> compute to fcs from the data
         Maps a single fmri scan (LR or RL) with its corresponding atlas raw to an fc.
         Needs raw data fmri/atlas files to run.
  
-    load_fmri.m
+    process_fmri.m
         Takes raw fmri/atlas file, averages activity in atlas brain regions.
         Returns N x num_observations matrix - each column is a vector observation
     
@@ -103,6 +103,14 @@ fc_trajectory ==> visualize how fcs changes at small windows along time series
     *.mlapp
         Explore averages of fmri data over windows and viz fc vs GFT of normalized windowed signal on many GSOs
 
+
+
+
+
+## Things to change for different machines **
+1) utils/path_to_project()
+    specify local path to project directory
+2)
 
 
 
