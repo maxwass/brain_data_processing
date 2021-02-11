@@ -24,10 +24,24 @@ end
 %eigenvalues in sorted order
 [~,ind] = sort(diag(evals));
 evals = evals(ind,ind);
+evals_vec = diag(evals);
 evecs = evecs(:,ind);
 
-GFT = transpose(evecs); % GFT == V^H
+%ensure eigenvector corresponnding to 0 freq (constant) is positive. For
+%laplacian, this represents the average value of all nodes, which for us
+%is non-negative. Thus for more intuitive plotting, make positive.
+zero_idx = find((abs(evals_vec)<.0000001));
+if ~isempty(zero_idx)
+    %pointing in 'positive' (1st quadrant) or 'negative' (3rd quadrant) direction?
+    zero_eigvec = evecs(:, zero_idx);
+    is_neg = dot(ones(size(zero_eigvec)), zero_eigvec) < 0;
+    if is_neg
+        evecs(:, zero_idx) = -1*evecs(:, zero_idx);
+    end
+end
 
+    
+GFT = transpose(evecs); % GFT == V^H
 
 %% apply GFT
 signals_freq = GFT*signals;

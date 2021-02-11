@@ -26,24 +26,28 @@ if isequal(which_scalars, "energy")
     mpf_energy = vecnorm(mpf_signal,2).^2;
     hpf_energy = vecnorm(hpf_signal,2).^2;
     
-    yyaxis(ax,'left'); %main metric on left
+    %yyaxis(ax,'left'); %main metric on left
     plot(ax, energy, 'k', 'LineWidth', 1, 'DisplayName', 'signal energy');
     hold(ax, 'on');
-    ylabel(ax, 'Total Energy', 'FontSize', 15);
+    ylabel(ax, 'Energy', 'FontSize', 15);
     set(ax, 'YColor', 'k')
     
-    yyaxis(ax,'right'); %main metric on left
+    %yyaxis(ax,'right'); %main metric on left
     lpr_int = sprintf('lpf [%d,%d]',low_freq_interval(1), low_freq_interval(2));
-    plot(ax, lpf_energy./energy, 'r', 'LineWidth', 1, 'DisplayName', lpr_int);
+    %plot(ax, lpf_energy./energy, 'r', 'LineWidth', 1, 'DisplayName', lpr_int);
+    plot(ax, lpf_energy, 'r', 'LineWidth', 1, 'DisplayName', lpr_int);
     
     mpr_int = sprintf('mpf [%d,%d]', med_freq_interval(1), med_freq_interval(2));
-    plot(ax, mpf_energy./energy, 'm', 'LineWidth', 1, 'DisplayName', mpr_int);
+    %plot(ax, mpf_energy./energy, 'm', 'LineWidth', 1, 'DisplayName', mpr_int);
+    plot(ax, mpf_energy, 'm', 'LineWidth', 1, 'DisplayName', mpr_int);
     
     hpr_int = sprintf('hpf [%d,%d]', high_freq_interval(1), high_freq_interval(2));
-    plot(ax, hpf_energy./energy, 'm-', 'LineWidth', 1, 'DisplayName', hpr_int);
+    %plot(ax, hpf_energy./energy, 'c', 'LineWidth', 1, 'DisplayName', hpr_int);
+    plot(ax, hpf_energy, 'c', 'LineWidth', 1, 'DisplayName', hpr_int);
+    
 
-    ylabel(ax, '% energy in freq ranges', 'FontSize', 15);
-    set(ax, 'YColor', 'm') % set y axis color to same as line color
+    %ylabel(ax, '% energy in freq ranges', 'FontSize', 15);
+    %set(ax, 'YColor', 'k') % set y axis color to same as line color
     hold(ax, 'off');
 
     
