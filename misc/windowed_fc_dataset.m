@@ -46,7 +46,7 @@ for i = 1:length(subject_list)
         
         
         [signal_windows] = windowed_signals(filtered_dtseries, windowsize, movesize);
-        [covs]            = construct_fcs(signal_windows);
+        [covs]           = apply_to_tensor_slices(@(x) cov(x'), signal_windows);
         
         
         %post-filtering on averaged window'ed vectors

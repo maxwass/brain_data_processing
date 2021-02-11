@@ -1,7 +1,7 @@
-function [filter_signals_freq] = freq_filtering(signals_freq,freq_intervals)
+function [filter_signals_freq] = freq_filtering(signals_freq, freq_intervals)
 %Given signals in frequency domain (columns are signals), take 
 %components from non-intersecting intervals in frequency domain to create
-%fitlered signal
+%filtered signal
 
 %signals_freq :: Nxnum_obsvs [float]
 %intervals :: kx1 *cell array* of 1x2 [int]'s

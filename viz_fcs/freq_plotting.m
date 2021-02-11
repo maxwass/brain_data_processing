@@ -28,10 +28,10 @@ path2fmri = path_to_LR1;
 dtseries = dtseries - mean(dtseries,2);
 
 [signal_windows] = windowed_signals(dtseries, windowsize, movesize);
-[fc_covs]     = construct_fcs(signal_windows);
-[fc_corr]     = apply_to_tensor_slices(@corrcov, fc_covs);
-col_mean      = @(x) mean(x,2);
-[ave_signals] = apply_to_tensor_slices(col_mean, signal_windows);
+fc_covs     = apply_to_tensor_slices(@(x) cov(x'), signal_windows);
+fc_corr     = apply_to_tensor_slices(@corrcov, fc_covs);
+col_mean    = @(x) mean(x,2);
+ave_signals = apply_to_tensor_slices(col_mean, signal_windows);
 
 if ~include_subcortical
     cortical_indices = {'20:end','20:end',':'};

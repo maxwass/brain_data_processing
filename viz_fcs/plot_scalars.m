@@ -17,9 +17,9 @@ if isequal(which_scalars, "energy")
     med_freq_interval = [low_freq_cutoffs+1,  med_freq_cutoffs];
     high_freq_interval= [med_freq_cutoffs+1, num_evals];
 
-    [lpf_signal] = freq_filter(signals_freq, low_freq_interval);
-    [mpf_signal] = freq_filter(signals_freq, med_freq_interval);
-    [hpf_signal] = freq_filter(signals_freq, high_freq_interval);
+    [lpf_signal] = freq_filtering(signals_freq, {low_freq_interval});
+    [mpf_signal] = freq_filtering(signals_freq, {med_freq_interval});
+    [hpf_signal] = freq_filtering(signals_freq, {high_freq_interval});
 
     energy = vecnorm(signals_freq,2).^2;
     lpf_energy = vecnorm(lpf_signal,2).^2;
