@@ -1,4 +1,4 @@
-function [processed_x] = preprocess_signals(x, which_metric, filter_params, use_per)
+function [which_idxs_remove, raw_cutoff] = preprocess_signals(x, GFT, which_metric, filter_params, use_per)
 %which signals to keep or remove
 
 % which_metric determines which metric to use to determine whether to keep
@@ -6,47 +6,54 @@ function [processed_x] = preprocess_signals(x, which_metric, filter_params, use_
 %  'energy'
 %       => filter_params = {cutoff :: float}
 %  'freq_distribution' 
-%       => filter_params = {ranges :: {[int]}, cutoff :: float}
+%       => filter_params = {ranges :: {[int]}, cutoff :: float, patient_info...}
 %  'active_frontal_lobe'
 %       =>'active_frontal_lobe' => {cutoff :: float}
 
 % use_perc := use cutoff as percentile or raw threshold?
 
-if use_per && ~(0<filter_params.cutoff<1)
+%%Outputs
+%which_idxs_remove - [int] indices removed by cutoff
+%raw_cutoff = cutoff if ~use_per, prctile(_,cutoff) if use_per
+
+
+if use_per && ~(0<filter_params.cutoff && filter_params.cutoff<100)
 	error('percentile must be in [0,1]: %f', filter_params.cutoff);
 end
 
 
-if ismember("freq_distribution", which_metric)
+raw_cutoff = filter_params.cutoff;  %change if per used 
+
+
+if ismember("None", which_metric)
+    which_idxs_remove = [];
+    
+elseif ismember("freq_distribution", which_metric)
     
     %take GFT of signals, break up into freq ranges. Pick metric to map
     %from energy distribution to decision
-    if length(filter_params.range)~=3
+    if length(filter_params.ranges)~=3
         error('freq_distribution required 3 ranges');
     end
+
+    %fp = filter_params;
+    %[x_freq, ~, ~] = apply_GFT(x, fp.subject, fp.atlas, fp.include_subcortical, fp.GSO);
     
-    [low_freq_interval, med_freq_interval, high_freq_interval} = ...
-        deal(filter_params.ranges{:}}
-    
-    [x_freq, ~, ~] = apply_GFT(x, subject, atlas, include_subcortical, GSO);
-    [lpf_signal] = freq_filtering(x_freq, {low_freq_interval});
-    [mpf_signal] = freq_filtering(x_freq, {med_freq_interval});
-    [hpf_signal] = freq_filtering(x_freq, {high_freq_interval});
-    
-    energy = vecnorm(x_freq,2).^2;
-    lpf_energy = vecnorm(lpf_signal,2).^2;
-    mpf_energy = vecnorm(mpf_signal,2).^2;
-    hpf_energy = vecnorm(hpf_signal,2).^2;
-    
-    lpf_energy_contrib = lpf_energy./energy;
-    mpf_energy_contrib = mpf_energy./energy;
-    hpf_energy_contrib = hpf_energy./energy;
+    energy = vecnorm(x,2).^2;
+    x_freq = GFT*x;
+    energy_contributions = energy_in_freq_intervals(x_freq, filter_params.ranges);
+    lpf_energy = energy_contributions(1,:);
+    lpf_energy_frac = lpf_energy./energy;
     
     if use_per
-        p = prctile(lpf_energy_contrib, filter_params.cutoff);
-        which_idxs = lpf_energy_contrib > p;
+        raw_cutoff = prctile(lpf_energy_frac, filter_params.cutoff); %must be in [0,100]
+        which_idxs_remove = find(lpf_energy_frac > raw_cutoff);
     else
-        which_idxs = (lpf_energy_contrib > filter_params.cutoff);
+        if filter_params.cutoff>1 %probably made a mistake...frac is max 1
+            filter_params.cutoff=filter_params.cutoff/100;
+            fprintf('Liekly error...Please change cutoff to be in [0,1] when not using percentile');
+        end
+        which_idxs_remove = find(lpf_energy_frac > filter_params.cutoff); %*100 to put in [0,100]
     end
 
 
@@ -55,10 +62,10 @@ elseif ismember("energy", which_metric)
     
     energy = vecnorm(x,2).^2;
     if use_per
-        p = prctile(energy, filter_params.cutoff);
-        which_idxs = energy > p;
+        raw_cutoff = prctile(energy, filter_params.cutoff);
+        which_idxs_remove = find(energy > raw_cutoff);
     else
-        which_idxs = (energy > filter_params.cutoff);
+        which_idxs_remove = find(energy > filter_params.cutoff);
     end
 
 
@@ -66,9 +73,6 @@ elseif ismemmber("active_frontal_lobe", which_metric)
     % remove observations where clear thinking is occuring
     error('active frontal lobe not yet implemented');
 end
-
-processed_x = x;
-processed_x(which_idxs) = [];
 
 
 end
