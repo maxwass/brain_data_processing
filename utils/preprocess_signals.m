@@ -17,8 +17,14 @@ function [which_idxs_remove, raw_cutoff] = preprocess_signals(x, GFT, which_metr
 %raw_cutoff = cutoff if ~use_per, prctile(_,cutoff) if use_per
 
 
+% filter_params.cutoff is expected to be a number in [0,100]. If
+% normalized thresholding is used (currently everything except use_per
+% cases) ==> we divide it by 100 bc we are thresholding fractions
 if use_per && ~(0<filter_params.cutoff && filter_params.cutoff<100)
-	error('percentile must be in [0,1]: %f', filter_params.cutoff);
+	error('percentile must be in [0,100]: %f', filter_params.cutoff);
+end
+if (filter_params.cutoff<1)
+	error('normalization used in cutoff...expected number in [0,100]: %f', filter_params.cutoff);
 end
 
 
@@ -49,11 +55,8 @@ elseif ismember("freq_distribution", which_metric)
         raw_cutoff = prctile(lpf_energy_frac, filter_params.cutoff); %must be in [0,100]
         which_idxs_remove = find(lpf_energy_frac > raw_cutoff);
     else
-        if filter_params.cutoff>1 %probably made a mistake...frac is max 1
-            filter_params.cutoff=filter_params.cutoff/100;
-            fprintf('Liekly error...Please change cutoff to be in [0,1] when not using percentile');
-        end
-        which_idxs_remove = find(lpf_energy_frac > filter_params.cutoff); %*100 to put in [0,100]
+        filter_params.cutoff=filter_params.cutoff/100; %place in [0,1]
+        which_idxs_remove = find(lpf_energy_frac > filter_params.cutoff);
     end
 
 

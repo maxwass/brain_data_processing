@@ -29,7 +29,7 @@ if normalize
     yyaxis(ax,'left');
 end
 legend_handles(1) = plot(ax, energy, 'k', 'LineWidth', 1, 'DisplayName', 'signal energy');
-ylabel(ax, 'Energy', 'FontSize', 15);
+ylabel(ax, 'Energy', 'FontSize', 12);
 hold(ax, 'on');
 
 %show normalized distribution of energies on right y axis  
@@ -48,9 +48,13 @@ end
 
 
 %% if a raw threshold was used, place line showing the threshold value
+if normalize
+    optional.raw_cutoff = optional.raw_cutoff/100;
+end
 if optional.plot_cutoff_line || normalize
     yline(ax, optional.raw_cutoff, 'g', 'LineWidth', 2);
 end
+
 
 %find where values are the smallest so as to place text in convient
 %location to not block data
@@ -60,8 +64,8 @@ smoothed_energies = conv(energy, filt./length(filt), 'same'); %convolve with ave
 [y_text, ~] = max(smoothed_energies);
 
 %place message
-%text(ax, , x_text, .9*y_text, optional.message, 'FontSize', 15, 'Color', 'g');
-text(ax, .3, .9, optional.message, 'FontSize', 15, 'Color', 'g');
+text(ax, x_text, .9*y_text, optional.message, 'FontSize', 12, 'Color', 'g');
+%text(ax, .3, .9, optional.message, 'FontSize', 12, 'Color', 'g');
 
 
 %% highlight xticks that could be filtered out
@@ -79,8 +83,10 @@ end
 %% misc plotting
 %place xticks on outside
 %xlabel(ax, 'time','FontSize', 15);
-ylabel(ax, 'Fraction Energy in Range', 'FontSize', 15);
-set(ax, 'YColor', 'r')
+if normalize
+    ylabel(ax, 'Fraction Energy in Range', 'FontSize', 12);
+    set(ax, 'YColor', 'r')
+end
 legend(ax, legend_handles);
 hold(ax, 'off');
 

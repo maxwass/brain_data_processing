@@ -1,42 +1,41 @@
 function plot_grid(app)
 
-
-%% pull out (most) inputs (stored as private variables in app)
-low_index = app.low_index;
-high_index = app.high_index;
-num_windows_plot = int64(app.NumWindowPlotSpinner.Value);
-num_features_plot = app.cols; % fcs | freq repr | __
-normalize_freq_plot = app.NormFreqDropDown.Value;
-
-
-signal_windows     = app.signal_windows;
-ave_signal_windows = app.ave_signal_windows;
-ave_signal_windows_freq    = app.ave_signal_windows_freq;
-ave_signal_windows_freq_normed = app.ave_signal_windows_freq./vecnorm(ave_signal_windows_freq);
-
-if strcmp(normalize_freq_plot, 'L2 Norm')
-	ave_signal_windows_freq_reprs = ave_signal_windows_freq_normed;
+if strcmp(app.NormFreqDropDown.Value, 'L2 Norm')
+    %each signal is now L2 normed
+	ave_signal_windows_freq_reprs = app.ave_signal_windows_freq./vecnorm(app.ave_signal_windows_freq);
 else
-	ave_signal_windows_freq_reprs = ave_signal_windows_freq;
+	ave_signal_windows_freq_reprs = app.ave_signal_windows_freq;
 end
 
-which_fc = app.FCDropDown.Value;
-if strcmp(which_fc, 'Corr')
+%{
+dtseries_summary_fc = [];
+if use_all_signals
+    dtseries_summary_fc = app.plot_dtseries;
+elseif app.raw_filter_rm_from_fc_comp.Value
+    dtseries_summary_fc = app.plot_dtseries';
+    dtseries_summary_fc(:, app.removed_dtseries_idxs) =[];
+    summary_fc = cov(z');
+elseif use_in_range
+end
+%}
+dtseries_summary_fc = app.dtseries_frequency_filtered;
+if strcmp(app.PlotFCs.Value, 'Corr')
 	fcs = app.corrs;
-elseif strcmp(which_fc, 'Cov')
+    summary_fc = corr(dtseries_summary_fc');
+elseif strcmp(app.PlotFCs.Value, 'Cov')
 	fcs = app.covs;
+    summary_fc = cov(dtseries_summary_fc');
 else
-	error('Unrecognized FC selection %s\n', which_fc)
+	error('Unrecognized FC selection %s\n', app.PlotScalars.Value)
 end
 
-[N, ~, ~] = size(fcs);
 fc_col = 1;
 freq_col = 2;
 
 
-which_scalars    = app.ScalarsDropDown.Value;
-which_raw_filter = app.rawfilterDropDown.Value;
-which_wdw_filter = app.WdwFilterDropDown.Value;
+which_scalars    = app.PlotScalars.Value;
+which_raw_filter = app.raw_filter.Value;
+which_wdw_filter = app.wdw_filter.Value;
 
 
 %% We reuse same axes (tiled layout) for faster updating. Only create new axes
@@ -45,25 +44,34 @@ which_wdw_filter = app.WdwFilterDropDown.Value;
 
 if app.change_axes==true
     
-    app.tile_plot = tiledlayout(app.Panel, num_windows_plot + 1, num_features_plot,'TileSpacing','compact','Padding','none');
-    app.tiled_axes = gobjects(num_windows_plot, num_features_plot);
-    for row = 1:(num_windows_plot+1)
-        for col = 1:num_features_plot
-            %lin_idx = (row-1)*num_features_plot + col;
-            app.tiled_axes(row,col)= nexttile(app.tile_plot);
+    app.tile_plot = tiledlayout(app.Panel, app.NumWindowPlotSpinner.Value + 1, app.cols,'TileSpacing','compact','Padding','none');
+    app.axes.wdw_features = gobjects(app.NumWindowPlotSpinner.Value, app.num_features_plot); %doesn't include scalars on top
+    
+    %first row is scalars
+    scalar_span = [1,app.cols-1];
+    app.axes.scalars = nexttile(app.tile_plot, 1, scalar_span);
+    app.axes.summary_fc  = nexttile(app.tile_plot);
+    %%create axes and store 
+    % all the rest of the rows are summaries of windows (fcs, freq repr of
+    % mean vectors...)
+    feature_span = [1,app.cols/2];
+    for ftr_row = 1:(app.NumWindowPlotSpinner.Value)
+        for feature = 1:app.num_features_plot
+            %compute which tile we're on
+            tile_num = ftr_row*app.cols + (app.cols/2)*(feature-1) + 1;
+            
+            %place a long axis here
+            app.axes.wdw_features(ftr_row, feature)= nexttile(app.tile_plot,tile_num,feature_span);
         end
     end
-    
-    scalar_plot_ax      = nexttile(app.tile_plot, 1, [1 2]);
-    app.tiled_axes(1,1) = scalar_plot_ax;
-    
+
     if isequal(which_scalars, "signal_freq_distrib")
         x = app.plot_dtseries; %show *all* signals, even those filtered out
         x_freq = app.GFT*x;
-        optional.cutoff         = app.rawfiltercutoff.Value;
-        optional.raw_cutoff     = app.filter_dtseries_raw_cutoff; %convert from percentile to value
-        optional.use_percentile = app.rawfilterpercButton.Value;
-        optional.percentile_val = app.rawfiltercutoff.Value;
+        optional.cutoff         = app.raw_filter_cutoff.Value;
+        optional.raw_cutoff     = app.filter_dtseries_raw_cutoff; %convert from percentile to value in computation
+        optional.use_percentile = app.raw_filter_use_percentile.Value;
+        optional.percentile_val = app.raw_filter_cutoff.Value;
         optional.remove_idxs    = app.removed_dtseries_idxs;
 
         %if raw energy threshold is used, plot line which denotes cutoff
@@ -74,7 +82,7 @@ if app.change_axes==true
         %must plot normalized by total energy for threshold to be straight line    
         elseif isequal(which_raw_filter, 'freq_distribution')
             optional.plot_cutoff_line = false;
-            optional.message = sprintf('%% energy in low freq > %.2f %%\n use prcntile? %s', ...
+            optional.message = sprintf('frac energy in low freq > %.2f\n use prcntile? %s', ...
                 optional.raw_cutoff, string(optional.use_percentile));
         else
             error('unrecognized filter used: %s', which_raw_filter);
@@ -85,10 +93,10 @@ if app.change_axes==true
 	elseif isequal(which_scalars, "wdw_ave_energy")
         x = app.ave_signal_windows;
         x_freq = app.GFT*x;
-        optional.cutoff         = app.WdwFilterDropDown.Value;
+        optional.cutoff         = app.wdw_filter.Value;
         optional.raw_cutoff     = app.filter_wdw_raw_cutoff;  %convert from percentile to value
-        optional.use_percentile = app.WdwFilterPerButton.Value;
-        optional.percentile_val = app.WdwFilterCutoffSpinner.Value;
+        optional.use_percentile = app.wdw_filter_use_percentile.Value;
+        optional.percentile_val = app.wdw_filter_cutoff.Value;
         optional.remove_idxs    = app.removed_window_idxs;
         
         %if raw energy threshold is used, plot line which denotes cutoff
@@ -101,7 +109,7 @@ if app.change_axes==true
             
         elseif isequal(which_wdw_filter, 'freq_distribution')
             optional.plot_cutoff_line = false;
-            optional.message = sprintf('%% energy in low freq > %.2f %%\n use prcntile? %s', ...
+            optional.message = sprintf('frac energy in low freq > %.2f %%\n use prcntile? %s', ...
                 optional.raw_cutoff, string(optional.use_percentile));
             
         else
@@ -109,74 +117,42 @@ if app.change_axes==true
         end  
         xticks_ = 1:app.num_windows;
     end
-    plot_signal_energy(scalar_plot_ax, x, x_freq, ...
+    plot_signal_energy(app.axes.scalars, x, x_freq, ...
             app.energy_freq_plot.intervals, ...
             app.energy_freq_plot.interval_labels, ...
             app.energy_freq_plot.line_colors, ...
-            app.normalize_distribButton.Value,...
+            app.normalize_scalar_distrib_Button.Value,...
             optional);
-    %{    
-    elseif isequal(which_scalars, "signal_freq_distrib")
-        x = app.plot_dtseries; %show *all* signals, even those filtered out
-        x_freq = app.GFT*x;
-        optional.cutoff         = app.rawfiltercutoff.Value;
-        optional.raw_cutoff     = app.filter_dtseries_raw_cutoff; %convert from percentile to value
-        optional.use_percentile = app.rawfilterpercButton.Value;
-        optional.percentile_val = app.rawfiltercutoff.Value;
-        optional.remove_idxs    = app.removed_dtseries_idxs;
         
-        plot_signal_energy(scalar_plot_ax, x, x_freq, ...
-            app.energy_freq_plot.intervals, ...
-            app.energy_freq_plot.interval_labels, ...
-            app.energy_freq_plot.line_colors, ...
-            optional);
-
-    elseif isequal(which_scalars, "wdw_ave_energy")
-        x = app.ave_signal_windows;
-        x_freq = app.GFT*x;
-        optional.cutoff         = app.rawfiltercutoff.Value;
-        optional.raw_cutoff     = app.filter_wdw_raw_cutoff;  %convert from percentile to value
-        optional.use_percentile = app.WdwFilterPerButton.Value;
-        optional.percentile_val = app.WdwFilterCutoffSpinner.Value;
-        optional.remove_idxs    = app.removed_window_idxs;
-        
-        
-        plot_signal_energy(scalar_plot_ax, x, x_freq, ...
-            app.energy_freq_plot.intervals, ...
-            app.energy_freq_plot.interval_labels, ...
-            app.energy_freq_plot.line_colors, ...
-            optional);
-    elseif isequal(which_scalars, "fc_traj")
-        %plot_scalars(scalar_plot_ax, ave_signal_windows, ave_signal_windows_freq, fcs, which_scalars)
-        optional.cutoff         = app.rawfiltercutoff.Value;
-        optional.raw_cutoff     = app.filter_wdw_raw_cutoff;  %convert from percentile to value
-        optional.use_percentile = app.WdwFilterPerButton.Value;
-        optional.percentile_val = app.WdwFilterCutoffSpinner.Value;
-        optional.remove_idxs    = app.removed_window_idxs;
-        plot_fc_metrics(scalar_plot_ax, fcs, optional);
-    end
-    %}
-        
-    text(scalar_plot_ax,  double(low_index),  -3, 'L', 'Color', 'magenta', 'FontSize', 18);
-    text(scalar_plot_ax,  double(high_index), -3, 'H', 'Color', 'blue',   'FontSize', 18);
-    xticks(scalar_plot_ax, xticks_);
+    text(app.axes.scalars,   double(app.low_index),  -3, 'L', 'Color', 'magenta', 'FontSize', 18);
+    text(app.axes.scalars,   double(app.high_index), -3, 'H', 'Color', 'blue',   'FontSize', 18);
+    xticks(app.axes.scalars, xticks_);
+    
     app.change_axes=false;
 end
 
+%summary overall FC
+ax = app.axes.summary_fc;
+imagesc(ax, summary_fc);
+set(ax,'xticklabel',[]); set(ax,'yticklabel',[]);
+xlim(ax,[1,length(app.eigvals)]); xlim(ax,'manual');
+ylim(ax,[1,length(app.eigvals)]); ylim(ax, 'manual');
+daspect(ax,[1 1 1]);
+txt = sprintf("%s: %s", app.PlotFCs.Value, "all");
+%title(ax, txt,'FontSize', 12); %make string to indicate what used: all, filterd, specified range
 
 
 
-%% place scalar summary plots in first row all they way across columns
-%add marker to x axis to denote low and high idxs
-scalar_plot_ax = app.tiled_axes(1,1);
-scalar_plot_ch = get(scalar_plot_ax,'Children');
+
+%% add marker to x axis to denote low and high idxs
+scalar_plot_ch = get(app.axes.scalars,'Children');
 for idx_ch = 1:length(scalar_plot_ch)
     ch = scalar_plot_ch(idx_ch);
     if isa(ch, 'matlab.graphics.primitive.Text')
         if strcmp(ch.String, 'L')
-            ch.Position = [low_index, 0, 0];
+            ch.Position = [app.low_index, 0, 0];
         elseif strcmp(ch.String, 'H')
-            ch.Position = [high_index, 0, 0];
+            ch.Position = [app.high_index, 0, 0];
         end
     end
 end
@@ -184,10 +160,10 @@ end
 
 
 %% FCs: Column 1
-row=1;
-for i = low_index:high_index
+row=0;
+for i = app.low_index:app.high_index
 	row = row + 1;
-	ax = app.tiled_axes(row,fc_col);%nexttile(app.tile_plot, idx);
+	ax = app.axes.wdw_features(row,fc_col);
     fc = fcs(:,:,i);
 	imagesc(ax, fc);
     
@@ -198,9 +174,9 @@ for i = low_index:high_index
     ylp = get(ylh, 'Position');
     ext = get(ylh,'Extent');
     set(ylh, 'Rotation',0, 'Position',ylp-[2*ext(3) 0 0])
-    if i==low_index
+    if i==app.low_index
         set(ylh, 'Color', 'magenta');
-    elseif i==high_index
+    elseif i==app.high_index
         set(ylh, 'Color', 'blue');
     end
 	
@@ -212,14 +188,14 @@ for i = low_index:high_index
     
     
 end
-fc_axes = app.tiled_axes(2:end,fc_col);
+fc_axes = [app.axes.summary_fc; app.axes.wdw_features(1:end,fc_col)];
 percentile = app.fcscolorsSpinner.Value; 
 [cl] = find_cov_clim(fcs, percentile); %ciel needed?
 set(fc_axes, 'ColorMap', app.colormap_file.colorMap);
 set(fc_axes,'CLim',[-cl cl]);
 cb = colorbar(fc_axes(end),'West');
 %cb.Layout.Tile = 'west';
-title(fc_axes(1), which_fc,'FontSize', 15);
+title(fc_axes(2), app.PlotFCs.Value,'FontSize', 12);
 linkaxes(fc_axes,'xy');
            
 
@@ -248,27 +224,27 @@ for i = num_jumps_delete:-1:1
     plot_eigs(left_idx_largest_diffs(i)+1:end) = plot_eigs(left_idx_largest_diffs(i)+1:end) - (largest_diffs(i) - space);
 end
 
-row=1;
+row=0;
 % place plots
-for i = low_index:high_index
+for i = app.low_index:app.high_index
 	row = row + 1;
-	ax = app.tiled_axes(row,freq_col);
+	ax = app.axes.wdw_features(row,freq_col);
     %yyaxis(ax,'right');
 	freq_plot = stem(ax, plot_eigs, ave_signal_windows_freq_reprs(:,i), 'MarkerEdgeColor','green', 'color', 'k');
 	
     set(ax,'xtick',[]);
     set(ax,'xticklabel',[]);
-    if i ~=high_index
+    if i ~=app.high_index
         set(ax,'yticklabel',[]);
     end
     
     ylim(ax,[y_min_freq,y_max_freq])
     xlim(ax,[min(plot_eigs), max(plot_eigs)]);
-    str = sprintf('L2 Norm (mean centered): %.0f', norm(ave_signal_windows_freq(:,i), 2) );
+    str = sprintf('L2 Norm (mean centered): %.0f', norm(ave_signal_windows_freq_reprs(:,i), 2) );
     text(ax, 'String', str, 'Units', 'normalized', 'Position', [.6, .95])
 	%xlabel(ax,'freq');
 end
-freq_axes = app.tiled_axes(2:end,freq_col);
+freq_axes = app.axes.wdw_features(1:end,freq_col);
 linkaxes(freq_axes,'xy');
 
 % place vertical lines denoting where jumps were made
@@ -309,7 +285,7 @@ xtickangle(freq_axes(2:2:end), 45)
 
 
 
-freq_title = sprintf("GFT of %s (x wind - total mean) on %s", normalize_freq_plot,  app.GSODropDown.Value);
+freq_title = sprintf("GFT of %s (x wind - total mean) on %s", app.NormFreqDropDown.Value,  app.GSODropDown.Value);
 title(freq_axes(1), freq_title,'FontSize', 15);
 
 end
