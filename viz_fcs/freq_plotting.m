@@ -43,9 +43,8 @@ if ~include_subcortical
 end
 
 %% GFT computation
-%[all_signals_freq, ~, ~]       = apply_GFT(dtseries,    subject, atlas, include_subcortical, GSO);
-[ave_signals_freq, GFT, evals] = apply_GFT(ave_signals, subject, atlas, include_subcortical, GSO);
-
+[GFT, evals] = extract_GFT(subject, atlas, include_subcortical, GSO);
+ave_signals_freq = GFT*ave_signals;
 %plot scalars!
 ax = axes;
 %plot_scalars(ax, dtseries, all_signals_freq, covs, corrs, S); %adjust this for all signals!
@@ -81,7 +80,6 @@ signals_freq_norm = bsxfun(@rdivide, ave_signals_freq, norms);
 sig_concat = abs([signals_freq_norm, ave_signals_freq_rl_norm]);
 y_max = max(max(sig_concat(2:end,:)));
 
-evals = diag(evals);
 
 num_windows = 10;
 t = tiledlayout(2,num_windows);

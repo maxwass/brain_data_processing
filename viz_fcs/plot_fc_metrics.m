@@ -36,10 +36,7 @@ function plot_fc_metrics(ax, fcs, optional)
 
     %highlight xticks that were/would be removed!
 
-
-    
-    
-    
+   
     %{
     yyaxis(ax,'right');
     %plot(ax, [stein_diffs;mean(stein_diffs)], 'LineWidth', 1, 'DisplayName', 'stein');
@@ -51,9 +48,50 @@ function plot_fc_metrics(ax, fcs, optional)
     hold(ax, 'off');
 end
 
-xlabel(ax, 'Windows')
+xlabel(ax, 'Windows');
 %ylim(ax, [0,100])
 legend(ax)
+
+
+
+
+
+
+%{ from plot scalars
+yyaxis(ax,'left'); %main metric on left
+plot(ax, energy, 'k', 'LineWidth', 1, 'DisplayName', 'signal energy');
+hold(ax, 'on');
+lpr_int = sprintf('lpf [%d,%d]',low_freq_interval(1), low_freq_interval(2));
+plot(ax, lpf_energy, 'k-', 'LineWidth', 1, 'DisplayName', lpr_int);
+mpr_int = sprintf('mpf [%d,%d]', med_freq_interval(1), med_freq_interval(2));
+plot(ax, mpf_energy, 'k--', 'LineWidth', 1, 'DisplayName', mpr_int);
+hpr_int = sprintf('hpf [%d,%d]', high_freq_interval(1), high_freq_interval(2));
+plot(ax, hpf_energy, 'k:', 'LineWidth', 1, 'DisplayName', hpr_int);
+
+ylabel(ax, 'energy in freq range', 'FontSize', 15);
+set(ax, 'YColor', 'k') % set y axis color to same as line color
+%}
+
+
+%{
+yyaxis(ax,'right');
+plot(ax, max_eigs(1,:), 'c', 'LineWidth', 1, 'DisplayName', '1 max |eigs|');
+plot(ax, max_eigs(2,:), 'c--o','LineWidth', 1, 'DisplayName', '2 max |eigs|');
+%plot(ax, apply_to_tensor_slices(@norm, max_eigs), 'LineWidth', 1, 'DisplayName', '2 max |eigs|');
+%plot(ax, abs(max_eigs), '--y', 'LineWidth', 1, 'DisplayName', 'max |eigs|');
+%plot(ax, [stein_diffs;mean(stein_diffs)], 'LineWidth', 1, 'DisplayName', 'stein');
+herdin_diffs_rescale = (herdin_diffs/max(herdin_diffs))*mean(max_eigs(1,:));
+plot(ax, [herdin_diffs_rescale;mean(herdin_diffs_rescale)], 'c:', 'LineWidth', 1, 'DisplayName', 'herdin');
+
+ylabel(ax, 'Covariance Measures/Distances', 'FontSize', 15);
+set(ax, 'YColor', 'c') % set y axis color to same as line color
+
+hold(ax, 'off');
+xlabel(ax, 'Window')
+%ylim(ax, [0,100])
+legend(ax)
+%}
+
 
 
 

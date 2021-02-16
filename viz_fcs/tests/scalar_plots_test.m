@@ -23,8 +23,8 @@ mean_signal         = mean(dtseries,2);
 dtseries_center     = dtseries - mean_signal;
 
 %% compute frequency representation of windowed signals
-[signals_freq, GFT, evals] = apply_GFT(dtseries_center,subject, atlas, include_subcortical, GSO);
-
+[GFT, evals] = extract_GFT(subject, atlas, include_subcortical, GSO);
+signals_freq = GFT*dtseries_center;
 %% window signal
 windowsize = 20;
 movesize = 5;

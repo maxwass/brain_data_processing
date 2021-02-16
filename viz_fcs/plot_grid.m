@@ -1,24 +1,24 @@
 function plot_grid(app)
 
-if strcmp(app.NormFreqDropDown.Value, 'L2 Norm')
-    %each signal is now L2 normed
-	ave_signal_windows_freq_reprs = app.ave_signal_windows_freq./vecnorm(app.ave_signal_windows_freq);
-else
-	ave_signal_windows_freq_reprs = app.ave_signal_windows_freq;
-end
-
 %{
 dtseries_summary_fc = [];
 if use_all_signals
-    dtseries_summary_fc = app.plot_dtseries;
+    dtseries_summary_fc = app.dtseries_mean_center_all;
 elseif app.raw_filter_rm_from_fc_comp.Value
-    dtseries_summary_fc = app.plot_dtseries';
+    dtseries_summary_fc = app.dtseries_mean_center_all';
     dtseries_summary_fc(:, app.removed_dtseries_idxs) =[];
     summary_fc = cov(z');
 elseif use_in_range
 end
 %}
-dtseries_summary_fc = app.dtseries_frequency_filtered;
+[~,num_obsvs] = size(app.dtseries_frequency_filtered);
+if app.raw_filter_rm_from_fc_comp.Value
+    kept_dtseries_idxs = setdiff(1:num_obsvs, app.removed_dtseries_idxs);
+    dtseries_summary_fc = app.dtseries_frequency_filtered(:, kept_dtseries_idxs);
+else
+    dtseries_summary_fc = app.dtseries_frequency_filtered;
+end
+
 if strcmp(app.PlotFCs.Value, 'Corr')
 	fcs = app.corrs;
     summary_fc = corr(dtseries_summary_fc');
@@ -66,7 +66,8 @@ if app.change_axes==true
     end
 
     if isequal(which_scalars, "signal_freq_distrib")
-        x = app.plot_dtseries; %show *all* signals, even those filtered out
+        x_mean = mean(app.dtseries(app.roi_idxs,:),2);
+        x      = app.dtseries(app.roi_idxs,:)-x_mean; %show *all* signals, even those filtered out
         x_freq = app.GFT*x;
         optional.cutoff         = app.raw_filter_cutoff.Value;
         optional.raw_cutoff     = app.filter_dtseries_raw_cutoff; %convert from percentile to value in computation
@@ -77,13 +78,16 @@ if app.change_axes==true
         %if raw energy threshold is used, plot line which denotes cutoff
         if isequal(which_raw_filter, 'energy')
             optional.plot_cutoff_line = true;
-            optional.message = sprintf('energy > %.0f || prcntile? %s', ...
+            optional.message = sprintf('energy > %.0f \n use prcntile?  %s', ...
                 optional.raw_cutoff, string(optional.use_percentile));
         %must plot normalized by total energy for threshold to be straight line    
         elseif isequal(which_raw_filter, 'freq_distribution')
             optional.plot_cutoff_line = false;
             optional.message = sprintf('frac energy in low freq > %.2f\n use prcntile? %s', ...
                 optional.raw_cutoff, string(optional.use_percentile));
+        elseif isequal(which_raw_filter, 'None')
+            optional.plot_cutoff_line = false;
+            optional.message = sprintf('No filtering done.');
         else
             error('unrecognized filter used: %s', which_raw_filter);
         end
@@ -195,7 +199,7 @@ set(fc_axes, 'ColorMap', app.colormap_file.colorMap);
 set(fc_axes,'CLim',[-cl cl]);
 cb = colorbar(fc_axes(end),'West');
 %cb.Layout.Tile = 'west';
-title(fc_axes(2), app.PlotFCs.Value,'FontSize', 12);
+%title(fc_axes(2), app.PlotFCs.Value,'FontSize', 12);
 linkaxes(fc_axes,'xy');
            
 
@@ -205,8 +209,17 @@ linkaxes(fc_axes,'xy');
 % Find largest num_jumps_delete jumps between eigenvalues and shorten them
 % to be space length. New shifted eigenvalues(plot_eigs) are for plotting
 % only.
-y_max_freq = max(max(ave_signal_windows_freq_reprs)); %use percentile instead?
-y_min_freq = min(min(ave_signal_windows_freq_reprs));
+centered_energies = vecnorm(app.ave_signal_windows,2).^2;
+if strcmp(app.NormFreqDropDown.Value, 'L2 Norm')
+    %each signal is now L2 normed
+	ave_signal_windows_freq = app.GFT*(app.ave_signal_windows./vecnorm(app.ave_signal_windows));
+else
+    ave_signal_windows_freq = app.GFT*(app.ave_signal_windows);
+	%ave_signal_windows_freq_reprs = app.ave_signal_windows_freq;
+end
+
+y_max_freq = max(max(ave_signal_windows_freq)); %use percentile instead?
+y_min_freq = min(min(ave_signal_windows_freq));
 
 num_jumps_delete = app.xbreaksSpinner.Value;
 space = 0.03*(max(app.eigvals)-min(app.eigvals));
@@ -230,7 +243,7 @@ for i = app.low_index:app.high_index
 	row = row + 1;
 	ax = app.axes.wdw_features(row,freq_col);
     %yyaxis(ax,'right');
-	freq_plot = stem(ax, plot_eigs, ave_signal_windows_freq_reprs(:,i), 'MarkerEdgeColor','green', 'color', 'k');
+	freq_plot = stem(ax, plot_eigs, ave_signal_windows_freq(:,i), 'MarkerEdgeColor','green', 'color', 'k');
 	
     set(ax,'xtick',[]);
     set(ax,'xticklabel',[]);
@@ -240,8 +253,8 @@ for i = app.low_index:app.high_index
     
     ylim(ax,[y_min_freq,y_max_freq])
     xlim(ax,[min(plot_eigs), max(plot_eigs)]);
-    str = sprintf('L2 Norm (mean centered): %.0f', norm(ave_signal_windows_freq_reprs(:,i), 2) );
-    text(ax, 'String', str, 'Units', 'normalized', 'Position', [.6, .95])
+    str = sprintf('Filtered Energy (mean centered): %.0f', centered_energies(i) );
+    text(ax, 'String', str, 'Units', 'normalized', 'Position', [.6, .1])
 	%xlabel(ax,'freq');
 end
 freq_axes = app.axes.wdw_features(1:end,freq_col);
@@ -283,10 +296,15 @@ xtickangle(freq_axes(2:2:end), 45)
 
 %xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
 
+if app.raw_filter_rm_from_fc_comp.Value
+    mean_over = 'filtered';
+else
+    mean_over = 'all'; 
+end
+freq_txt = sprintf('$GFT_{%s}( \\bar{x}_{window(%d)} - \\bar{x}_{%s} )$ with %s', app.GSODropDown.Value, app.low_index, mean_over, app.NormFreqDropDown.Value);
+text(freq_axes(1), 'String', freq_txt, 'Units', 'normalized', 'Position', [.55, .9], 'FontSize', 15,'Interpreter','Latex');
 
-
-freq_title = sprintf("GFT of %s (x wind - total mean) on %s", app.NormFreqDropDown.Value,  app.GSODropDown.Value);
-title(freq_axes(1), freq_title,'FontSize', 15);
+%title(freq_axes(1), freq_txt,'FontSize', 15,'Interpreter','Latex');
 
 end
 

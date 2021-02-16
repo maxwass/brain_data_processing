@@ -55,17 +55,15 @@ switch which_metric
         lpf_energy = energy_contributions(1,:);
         lpf_energy_frac = lpf_energy./energy;
         
+        
         if use_per
-            raw_cutoff = prctile(lpf_energy_frac, filter_params.cutoff);
+            raw_cutoff = prctile(lpf_energy_frac, filter_params.cutoff); %must be in [0,100]
             which_idxs_remove = find(lpf_energy_frac > raw_cutoff);
         else
-            if filter_params.cutoff>1 %probably made a mistake...frac is max 1
-                filter_params.cutoff=filter_params.cutoff/100;
-            end
-            which_idxs_remove = find(lpf_energy_frac*100 > filter_params.cutoff);
+            filter_params.cutoff=filter_params.cutoff/100; %place in [0,1]
+            which_idxs_remove = find(lpf_energy_frac > filter_params.cutoff);
         end
-        
-    
+
         
 end
 

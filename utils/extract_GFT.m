@@ -1,5 +1,5 @@
-function [signals_freq, GFT, evals] = apply_GFT(signals,subject,atlas, include_subcortical, GSO)
-%Applies GFT to matrix of signals (each column is a signal)
+function [GFT, evals_vec] = extract_GFT(subject,atlas, include_subcortical, GSO)
+%Construct GFT from GSO of subject's sc scan
 % subject = string subject identifier
 
 
@@ -42,8 +42,5 @@ end
 
     
 GFT = transpose(evecs); % GFT == V^H
-
-%% apply GFT
-signals_freq = GFT*signals;
 end
 

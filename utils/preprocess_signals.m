@@ -41,9 +41,6 @@ elseif ismember("freq_distribution", which_metric)
     if length(filter_params.ranges)~=3
         error('freq_distribution required 3 ranges');
     end
-
-    %fp = filter_params;
-    %[x_freq, ~, ~] = apply_GFT(x, fp.subject, fp.atlas, fp.include_subcortical, fp.GSO);
     
     energy = vecnorm(x,2).^2;
     x_freq = GFT*x;

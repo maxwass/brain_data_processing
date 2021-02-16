@@ -166,8 +166,9 @@ end
 
 function plot_mean_vec_freq(ax, mean_vec_lr, mean_vec_rl, subject, atlas, include_subcortical, GSO)
     
-    [mean_vec_freq_lr, ~, ~]     = apply_GFT(mean_vec_lr, subject, atlas, include_subcortical, GSO);
-	[mean_vec_freq_rl, ~, evals] = apply_GFT(mean_vec_rl, subject, atlas, include_subcortical, GSO);
+    [GFT, evals] = extract_GFT(subject, atlas, include_subcortical, GSO);
+    mean_vec_freq_lr = GFT*mean_vec_lr;
+    mean_vec_freq_rl = GFT*mean_vec_rl;
     plot_eigs = diag(evals);
 	freq_plot_lr = stem(ax, plot_eigs, mean_vec_freq_lr, 'MarkerEdgeColor','green', 'color', 'k', 'DisplayName', 'lr');
 	hold on;
