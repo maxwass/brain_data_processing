@@ -1,4 +1,10 @@
 %% sanity checks on fmri time series data
+% For each patient with both LR/RL scans in REST1,
+% -view energy distribution of each signal in time series
+% -view node value distribution in mean signal
+% -view node value in mean signal (with each node specified)
+% -view GFT of mean signal
+
 close all;
 %% load raw fmri files, process with desikan atlas. Save to mat file for 
 % fast access (don't need to read fmri file now)
@@ -123,6 +129,7 @@ for i_index = 1:length(subject_list)
 
         ax_freq = nexttile(t);
         plot_mean_vec_freq(ax_freq, mean_roi_lr, mean_roi_rl, subject, atlas, include_subcortical, GSO);
+        waitfor(f);
     end
 
 end
@@ -167,18 +174,24 @@ end
 function plot_mean_vec_freq(ax, mean_vec_lr, mean_vec_rl, subject, atlas, include_subcortical, GSO)
     
     [GFT, evals] = extract_GFT(subject, atlas, include_subcortical, GSO);
+    
     mean_vec_freq_lr = GFT*mean_vec_lr;
     mean_vec_freq_rl = GFT*mean_vec_rl;
-    plot_eigs = diag(evals);
-	freq_plot_lr = stem(ax, plot_eigs, mean_vec_freq_lr, 'MarkerEdgeColor','green', 'color', 'k', 'DisplayName', 'lr');
+    
+    %set 0th eigvalue to be 0 for scaline
+    mean_vec_freq_lr(1) = 0;
+    mean_vec_freq_rl(1) = 0;
+    dist_freq = norm(mean_vec_freq_lr - mean_vec_freq_rl);
+    
+	freq_plot_lr = stem(ax, evals, mean_vec_freq_lr, 'MarkerEdgeColor','green', 'color', 'k', 'DisplayName', 'lr');
 	hold on;
-    freq_plot_rl = stem(ax, plot_eigs, mean_vec_freq_rl, 'MarkerEdgeColor','red', 'color', 'k', 'DisplayName', 'rl');
+    freq_plot_rl = stem(ax, evals, mean_vec_freq_rl, 'MarkerEdgeColor','red', 'color', 'k', 'DisplayName', 'rl');
     hold off;
     legend;
     
     xlabel(ax, sprintf('graph frequency of GSO %s', GSO));
 	%ylabel(ax_freq, 'freq signal');
-	txt = sprintf('Freq repr of *mean* vector over *all observations*');
+	txt = sprintf('Freq repr *mean* vector over *all obsvs*. 0 Comp removed. Dist(mean(x_lr),mean(x_rl)) = %.1f', dist_freq);
 	if isequal(GSO,'L')
         N = length(mean_vec_lr);
         m_lr = mean_vec_freq_lr(1)*sqrt(N)/N;

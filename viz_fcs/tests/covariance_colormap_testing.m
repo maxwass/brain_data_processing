@@ -13,7 +13,12 @@ current_dtseries;
 dtseries = current_dtseries(roi_idxs,:);
 mean_signal = mean(dtseries,2);
 dtseries_center = dtseries-mean_signal;
-[covs, corrs, aw] = windowed_fcs(dtseries_center, 30, 10);
+
+signal_windows = windowed_signals(dtseries_center, windowsize, movesize);
+covs  = apply_to_tensor_slices(@(x) cov(x'), signal_windows);
+corrs = apply_to_tensor_slices(@corrcov, covs);
+ave_signal_windows = apply_to_tensor_slices(@(x) mean(x,2), signal_windows);
+
 [N, ~, num_windows] = size(covs);
 
 zero_diag = ones(N) - eye(N);

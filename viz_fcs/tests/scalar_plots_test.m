@@ -29,8 +29,10 @@ signals_freq = GFT*dtseries_center;
 windowsize = 20;
 movesize = 5;
 
-[covs, aw]   = windowed_fcs(dtseries_center, windowsize, movesize);
-corrs = corrcov_tensor(covs);
+signal_windows = windowed_signals(dtseries_center, windowsize, movesize);
+covs  = apply_to_tensor_slices(@(x) cov(x'), signal_windows);
+corrs = apply_to_tensor_slices(@corrcov, covs);
+ave_signal_windows  = apply_to_tensor_slices(@(x) mean(x,2), app.signal_windows);    
 [N, ~, num_windows] = size(covs);
 
 %% load scs from saved tensor file

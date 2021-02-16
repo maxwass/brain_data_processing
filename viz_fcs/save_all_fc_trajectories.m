@@ -1,3 +1,5 @@
+%% compute and save fc trajectories for ALL patients
+
 %% setup
 clear;
 clc;
@@ -59,21 +61,16 @@ fc_traj_params = struct('colorMap', colorMap, 'windowsize', 30, 'movesize', 10);
 for i_index=1:length(subject_list)
     
     subject = subject_list(i_index,:); %must be char array for [...] to work later
-       
-    if(strcmp(atlas,"desikan"))                 %missing 4 and 39 are corpus collusum. WHAT IS 0??
-        ChosenROI_cortical    =   setxor(0:70,[0, 4, 39]);
-        ChosenROI_subcortical =   setxor(1:21,[1, 2]); %1,2 are general Left/Right hemisphere
+
+    if(strcmp(atlas,"desikan"))
+        chosen_roi         = load('data/desikan_roi_zhengwu', 'roi').roi;
         plot_write_path = plots_dir + "/desikan_cortical_" + string(subject);
-    elseif(strcmp(atlas,"destrieux"))           %missing 42 and 117 are corpus collusum
-        ChosenROI_cortical    =   setxor(0:150,[0, 42, 117]); %may have to reorder if you want all left hemisphere regions together for viz
-        ChosenROI_subcortical = []; %setxor(1:21,[1, 2]) % same as desikan
+    elseif(strcmp(atlas,"destrieux"))
+        chosen_roi         = load('data/destrieux_roi_zhengwu', 'roi').roi;
         filename = plots_dir + "/destrieux_cortical_" + string(subject);
     else
         error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
     end
-    
-    chosen_roi = struct('cortical', ChosenROI_cortical, 'subcortical', ChosenROI_subcortical);
-
     
     path_to_LR1 = [raw_hcp_datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
     path_to_RL1 = [raw_hcp_datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
@@ -106,16 +103,18 @@ for i_index=1:length(subject_list)
         start = tic;
         dtseries_lr = process_fmri(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi.cortical, chosen_roi.subcortical);
         %created windowed fcs and ave signals
-        [fc_cov_w, ave_signals_w] = windowed_fcs(dtseries_lr, fc_traj_params.windowsize, fc_traj_params.movesize);
-        fc_corr_w = corrs_tensor(fc_corr_w);
-        size_fc = size(fc_corr_w);
+        signal_windows_lr = windowed_signals(dtseries_lr,fc_traj_params.windowsize, fc_traj_params.movesize);
+        covs_lr  = apply_to_tensor_slices(@(x) cov(x'), signal_windows_lr);
+        corrs_lr = apply_to_tensor_slices(@corrcov, covs_lr);
+        ave_signal_windows  = apply_to_tensor_slices(@(x) mean(x,2), signal_windows);    
+        size_fc = size(corrs_lr);
         time = toc(start);
         disp(['   time for ' name ' load + windowing: ' num2str(time)]);
         
         if missing_LR1_fc_plot
             fprintfp('   creating windowed fc plot...');
             start = tic;
-            plot_cov_traj(fc_corr_w, fc_traj_params, lr_filename_fc, subject, name);
+            plot_cov_traj(corrs_lr, fc_traj_params, lr_filename_fc, subject, name);
             stop = toc(start);
             fprintf('%s s\n', num2str(stop));
         end
@@ -123,7 +122,7 @@ for i_index=1:length(subject_list)
             fprintf('   creating freq plot...');
             start = tic;
             A = brain_dataset.transform_scs(:,:,i_index);
-            plot_freq_traj(A, ave_signals_w, fc_traj_params, lr_filename_freq, subject, name);
+            plot_freq_traj(A, ave_signal_windows, fc_traj_params, lr_filename_freq, subject, name);
             stop = toc(start);
             fprintf('%s s\n', num2str(stop));
         end
@@ -143,7 +142,7 @@ for i_index=1:length(subject_list)
 end
 
 
-function plot_cov_traj(windowed_fcs, fc_traj_params,  plot_filename, subject, name) 
+function plot_cov_traj(fcs, fc_traj_params,  plot_filename, subject, name) 
 
 	%% plot grid of covariances
     rows = 10; %CHANGE TO FLOW in tiledleyout so dont need to set this
@@ -159,7 +158,7 @@ function plot_cov_traj(windowed_fcs, fc_traj_params,  plot_filename, subject, na
 	num_covs = size_fc(3);
     for c = 1:num_covs
         nexttile;
-        corr = windowed_fcs(:,:,c);
+        corr = fcs(:,:,c);
         corr_cortical = corr(20:end, 20:end);
         imagesc(corr_cortical);
         set(gca,'xticklabel',[]); set(gca,'yticklabel',[]);

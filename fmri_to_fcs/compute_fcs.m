@@ -3,6 +3,9 @@
 %   With help from Marty Cole, current PhD student at UofR
 
 
+%% Load raw fmri files, compute, and save cov for each patients LR and/or RL files.
+
+
 %% setup
 clear all;
 clc;
@@ -38,19 +41,18 @@ tasktype='rfMRI_REST1'; %'tfMRI_GAMBLING'; 'tfMRI_MOTOR'; 'tfMRI_GAMBLING'; 'tfM
 %% computation
 for i_index=1:length(subject_list)
     subject = subject_list(i_index,:); %must be char array for [...] to work later
-       
-    if(strcmp(atlas,"desikan"))                 %missing 4 and 39 are corpus collusum. WHAT IS 0??
-        ChosenROI_cortical    =   setxor(0:70,[0, 4, 39]);
-        ChosenROI_subcortical =   setxor(1:21,[1, 2]); %1,2 are general Left/Right hemisphere
+
+    if(strcmp(atlas,"desikan"))
+        chosen_roi     = load('data/desikan_roi_zhengwu', 'roi').roi;
         write_filename = [desikan_write_folder,'/',subject,'.mat'];
-    elseif(strcmp(atlas,"destrieux"))           %missing 42 and 117 are corpus collusum
-        ChosenROI_cortical    =   setxor(0:150,[0, 42, 117]); %may have to reorder if you want all left hemisphere regions together for viz
-        ChosenROI_subcortical = []; %setxor(1:21,[1, 2]) % same as desikan
+    elseif(strcmp(atlas,"destrieux"))
+        chosen_roi     = load('data/destrieux_roi_zhengwu', 'roi').roi;
         write_filename = [destrieux_write_folder,'/',subject,'.mat'];
     else
         error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
     end
     
+
     files = dir(write_filename);
     [file_exist, ~] = size(files); %if any files exist in patients dir
     if file_exist
@@ -72,7 +74,11 @@ for i_index=1:length(subject_list)
     if has_LR1
         start = tic;
         name = 'LR';
-        [fc_cov_lr, fc_corr_lr] = fmri_to_cov(atlas, path_to_LR1, subject, tasktype, raw_hcp_datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
+        
+        dtseries_lr = process_fmri(atlas, path_to_LR1, subject, rawdatafolder, chosen_roi);
+        fc_cov_lr = cov(dtseries_lr');
+        fc_corr_lr= corrcov(fc_cov_lr);
+        
         time_lr = toc(start);
         disp(['   time for LR: ' num2str(time_lr)]);   
     end
@@ -82,7 +88,11 @@ for i_index=1:length(subject_list)
     if has_RL1
         start = tic;
         name = 'RL';
-        [fc_cov_rl, fc_corr_rl] = fmri_to_cov(atlas, path_to_RL1, subject, tasktype, raw_hcp_datafolder, name, ChosenROI_cortical, ChosenROI_subcortical);
+        
+        dtseries_rl = process_fmri(atlas, path_to_RL1, subject, raw_hcp_datafolder, chosen_roi);
+        fc_cov_rl = cov(dtseries_rl');
+        fc_corr_rl= corrcov(fc_cov_rl);
+        
         time_rl = toc(start);
         disp(['   time for RL: ' num2str(time_rl)]);
     end

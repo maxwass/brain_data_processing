@@ -1,4 +1,4 @@
-This repository is for the computation of functional connectivities (covariance matrices) for patients in the HCP_1200 dataset. There are 1113 patients in the HCP_1200 dataset. A subset of them have at least one (of two possible) fmri scans for the REST1 portion of the dataset. Each available scan is parcelized according to an atlas (Deskian or Destreuix), activity values are averaged in these parcellizations for each time point thus creating a vector observation (each entry corresponds to a brain regions). These observations are then used to compute the overall covariance matrix.
+This repository is for the computation of functional connectivities (covariance matrices) for patients in the HCP_1200 dataset. There are 1113 patients in the HCP_1200 dataset. A subset of them have at least one (of two possible) fmri scans for the REST1 portion of the dataset. Each available scan is parcelized according to an atlas (Deskian or Destreuix), activity values are averaged in these parcellizations for each time point thus creating a vector observation (each entry corresponds to a brain regions). These observations are then used to compute some functional connectivity matrix, either using all observations or windowed/sampled subsets.
 
 If you would like to download these raw fmri/atlas files for yourself, see my other repo hcp-download-script here:
     https://github.com/maxwass/hcp-download-script
@@ -6,30 +6,99 @@ If you would like to download these raw fmri/atlas files for yourself, see my ot
 If you would like to read more about this data and how it was collected, see the review paper:
     https://pubmed.ncbi.nlm.nih.gov/22366334/
 
+Assumed directory structure:
+    -It is assumed that all required files are in a directory named 'brain_data', and each patient has its own directory with the subject id as the directory name.
+    -If directory path is changed, update the way the path2fmri variable is constructed appropriately in files _______
+ 
+## Things to change for different machines **
+1) utils/path_to_project()
+    specify local path to project directory
+2)
+
+
 
 Project Layout:
 
-fc_processing/ ==> compute to fcs from the data
-    compute_fcs.m **
+fmri_processing/ ==> 
+    process_fmri.m
+        Takes raw fmri & atlas file, averages activity in atlas brain regions.
+        Returns N x num_observations matrix - each column is a vector observation
+    load_fmri.m
+        Calls cifti function for reading raw fmri files.
+    load_atlas.m
+        Calls cifit function for reading atlas parcellizations specified by 'atlas'.
+    transform_sc.m
+        Transform applied to raw scs given by Zhengwu. Makes symmetric with compressed data range.
+    cifti_matlab/
+        Repositiory of functions for reading brain imaging files.
+
+fmri_to_fcs/
+    windowed_signals.m
+        Given matrix of vector observations (the columns) construct subsets (windows) of signals by sliding window frame over matrix.
+    sc_fc_dataset.m **
+        Create large tensors of fcs, scs, and metadata into a .mat file.
+    random_subsets.m
+        Returns equally sized subsets (slices of a tensor) of matrix of observations via sampling.
+    preprocess_fcs.m
+        Given tensor of fcs, apply filter to each fc slice to determine which should be removed.
+    compute_fcs.m
         Script coordinating fc computation for all patients. 
         Saves .mat for each patient with fc's and relavatn metadata
         Needs data files to run.
         Output of this script (for desikan atlas) can be found here: 
-            https://drive.google.com/drive/folders/1LQocAEeEI02704KrmIior4HEcXx8KxSk?usp=sharing
-    
-    fmri_to_cov.m **
-        Maps a single fmri scan (LR or RL) with its corresponding atlas raw to an fc.
-        Needs raw data fmri/atlas files to run.
+        https://drive.google.com/drive/folders/1LQocAEeEI02704KrmIior4HEcXx8KxSk?usp=sharing
+
+
+viz_fcs/
+    fMRI_signals_explore.m
+        Plot energy distribution of signals for LR and RL signals. Plot characterstics of mean vectors in time and freq.
+    save_all_fc_trajectories.m
+        Creates directory of lr/rl jpgs showing fc trajectory ()windowed fcs). 
+    fc_trajectories_gui/  ===> visualize how fcs changes at small windows along time series
+        fc_trajectories.mlapp
+            GUI app to explore time series and fc tracjectories with filters.
+
+utils/  ==> misc functions
+
+
+viz_scs/
+    explore_brain_data.m
+        Plot graphs with increasing threshold for edges (and thus more sparsity).
+    inspect_given_scs.m (todo)
+        Explore features of scs (largest eigenvalues, sparsities, etc).
+
+
+data_accounting/
+    data_accounting.m
+        Analysis on what data we have for each patients, and which scans are needed
  
-    process_fmri.m
-        Takes raw fmri/atlas file, averages activity in atlas brain regions.
-        Returns N x num_observations matrix - each column is a vector observation
-    
+    compare_datasets.m
+        Viz compares old dataset given by Zhengwu to new computed dataset.
+        Plotting to compare old correlation fcs to new computed correlation fcs
+        Outputs jpgs showing comparison for each patient
+   
+    subject_list_dir_debug.m
+        Found repeated subject in subject_list outputed by function in hcp-batch-download repo
+
+
+construct_datasets/
     sc_fc_dataset.m **
         Create large tensors of fcs, scs, and metadata into a .mat file
+    windowed_fc_dataset.m
+        Creates large tensor of fcs (from windowing) and metadata in a .mat file
+    fc_subsample_ds.m
+        Creates large tensor of fcs (from subsampling), and metadata in a .mat file
+    test_dataset_creation.m
+        Ensure data placed into dataset tensors properly by reloading the raw .mat file and comparing
     
-    transform_sc.m
-        Maps from raw scs to transformed scs via log(raw_edge+1)
+       
+cached_desikan/
+    create_cached_data.m
+        Load and process fmri files with given atlas (desikan) and cache result for faster loading later.
+    fix_cached_data_format.m
+        For changing contents/variables of all cached files.
+    rfMRI_REST1/ ==> cached data files for task REST1
+
 
 data/  ==> .mat files outputted and/or used by other scripts
     brain_dataset_fc_sc_pairs.mat
@@ -70,49 +139,6 @@ data/  ==> .mat files outputted and/or used by other scripts
     scs_desikan.mat
         1065 87x87 structural connectivities provided by Zhengwu.
         Desikan atlas, Subcortical nodes come FIRST (1-19), corresponding patient ids in subject_list_sc
-
-
-misc/ ==> miscellaneos files for visualizing, analysing the data, and testing other scripts
-    data_accounting.m **
-        Analysis on what data we have for each patients, and which scans are needed
-    
-      test_dataset_creation.m
-        Ensure data placed into dataset tensors properly by reloading the raw .mat file and comparing
-    
-    compare_datasets.m
-        Plotting to compare old correlation fcs to new computed correlation fcs
-        Outputs jpgs showing comparison for each patient
-    
-    inspect_given_scs.m
-        Sanity checks on scs
-    
-    subject_list_dir_debug.m
-        Found repeated subject in subject_list outputed by function in hcp-batch-download repo
-
-    old_brain_data_load_script.
-        original script used for loading fcs/scs and outputing fc-sc dataset
-        dont use this
-
-fc_trajectory ==> visualize how fcs changes at small windows along time series
-    fc_trajectory.m
-        Creates directory of lr/rl jpgs showing fc trajectory windowed fcs). 
-
-    windowed_fcs.m
-        Takes data for a single patients lr or rl fmri data, and computes plot of windowed fcs.
-
-    *.mlapp
-        Explore averages of fmri data over windows and viz fc vs GFT of normalized windowed signal on many GSOs
-
-
-
-
-
-## Things to change for different machines **
-1) utils/path_to_project()
-    specify local path to project directory
-2)
-
-
 
 
 
