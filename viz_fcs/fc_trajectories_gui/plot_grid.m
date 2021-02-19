@@ -51,7 +51,7 @@ if app.change_axes==true
     scalar_span = [1,app.cols-1];
     app.axes.scalars = nexttile(app.tile_plot, 1, scalar_span);
     app.axes.summary_fc  = nexttile(app.tile_plot);
-    %%create axes and store 
+    %% create axes and store 
     % all the rest of the rows are summaries of windows (fcs, freq repr of
     % mean vectors...)
     feature_span = [1,app.cols/2];
@@ -65,16 +65,21 @@ if app.change_axes==true
         end
     end
 
+    %% which scalar plots should we do?
     if isequal(which_scalars, "signal_freq_distrib")
         x_mean = mean(app.dtseries(app.roi_idxs,:),2);
-        x      = app.dtseries(app.roi_idxs,:)-x_mean; %show *all* signals, even those filtered out
+        x      = app.dtseries(app.roi_idxs,:) - app.average_node_value;%-x_mean; %show *all* signals, even those filtered out
         x_freq = app.GFT*x;
         optional.cutoff         = app.raw_filter_cutoff.Value;
         optional.raw_cutoff     = app.filter_dtseries_raw_cutoff; %convert from percentile to value in computation
         optional.use_percentile = app.raw_filter_use_percentile.Value;
         optional.percentile_val = app.raw_filter_cutoff.Value;
         optional.remove_idxs    = app.removed_dtseries_idxs;
-
+        optional.cutoff_line_y_axis = 'left';
+        if app.normalize_scalar_distrib_Button.Value
+                optional.cutoff_line_y_axis = 'right';
+        end
+ 
         %if raw energy threshold is used, plot line which denotes cutoff
         if isequal(which_raw_filter, 'energy')
             optional.plot_cutoff_line = true;
@@ -82,7 +87,7 @@ if app.change_axes==true
                 optional.raw_cutoff, string(optional.use_percentile));
         %must plot normalized by total energy for threshold to be straight line    
         elseif isequal(which_raw_filter, 'freq_distribution')
-            optional.plot_cutoff_line = false;
+            optional.plot_cutoff_line = true;
             optional.message = sprintf('frac energy in low freq > %.2f\n use prcntile? %s', ...
                 optional.raw_cutoff, string(optional.use_percentile));
         elseif isequal(which_raw_filter, 'None')
@@ -102,6 +107,10 @@ if app.change_axes==true
         optional.use_percentile = app.wdw_filter_use_percentile.Value;
         optional.percentile_val = app.wdw_filter_cutoff.Value;
         optional.remove_idxs    = app.removed_window_idxs;
+        optional.cutoff_line_y_axis = 'left';
+        if app.normalize_scalar_distrib_Button.Value
+                optional.cutoff_line_y_axis = 'right';
+        end
         
         %if raw energy threshold is used, plot line which denotes cutoff
         threshold_filter = ["energy", "eig_1", "eig_2"];
@@ -115,18 +124,28 @@ if app.change_axes==true
             optional.plot_cutoff_line = false;
             optional.message = sprintf('frac energy in low freq > %.2f %%\n use prcntile? %s', ...
                 optional.raw_cutoff, string(optional.use_percentile));
-            
         else
             error('unrecognized filter used: %s', which_wdw_filter);
         end  
         xticks_ = 1:app.num_windows;
+        
+    elseif isequal(which_scalars, "fc_traj")
+        fc_traj = apply_to_tensor_slices(@(x) cov(x'), app.signal_windows);
+        xticks_ = 1:app.num_windows;
+        
     end
-    plot_signal_energy(app.axes.scalars, x, x_freq, ...
+    
+    
+    if ismember(which_scalars, ["signal_freq_distrib","wdw_ave_energy"]) 
+        plot_signal_energy(app.axes.scalars, x, x_freq, ...
             app.energy_freq_plot.intervals, ...
             app.energy_freq_plot.interval_labels, ...
             app.energy_freq_plot.line_colors, ...
             app.normalize_scalar_distrib_Button.Value,...
             optional);
+    else
+        plot_fc_metrics(app.axes.scalars, fc_traj);
+    end
         
     text(app.axes.scalars,   double(app.low_index),  -3, 'L', 'Color', 'magenta', 'FontSize', 18);
     text(app.axes.scalars,   double(app.high_index), -3, 'H', 'Color', 'blue',   'FontSize', 18);
@@ -280,6 +299,9 @@ for j = num_jumps_delete:-1:1
 	text(freq_axes(end), (x0+x1)/2,app.y_min+(ax_offset/2)+text_offset,gap, 'FontSize',10);
 end
 
+
+%%IF ONLY 1 PLOT THEN NO EVENS AND ODDS!
+
 %make odd plots have xticks as the idxs
 xticks(freq_axes(1:2:end), plot_eigs);
 xticklabels(freq_axes(1:2:end), app.eig_idxs);
@@ -287,14 +309,15 @@ set(freq_axes(1:2:end),'fontsize',7);
 %xlabel(freq_axes(1:2:end), 'Eigval IDX');
 xtickangle(freq_axes(1:2:end), 45)
 
+if app.num_windows>1
+    %make even plots have the xticks as the eigenvalues
+    xticks(freq_axes(2:2:end), plot_eigs)
+    xticklabels(freq_axes(2:2:end), app.eig_labels);
+    set(freq_axes(2:2:end),'fontsize',7);
+    xtickangle(freq_axes(2:2:end), 45)
+    %xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
+end
 
-%make even plots have the xticks as the eigenvalues
-xticks(freq_axes(2:2:end), plot_eigs)
-xticklabels(freq_axes(2:2:end), app.eig_labels);
-set(freq_axes(1:2:end),'fontsize',7);
-xtickangle(freq_axes(2:2:end), 45)
-
-%xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
 
 if app.raw_filter_rm_from_fc_comp.Value
     mean_over = 'filtered';

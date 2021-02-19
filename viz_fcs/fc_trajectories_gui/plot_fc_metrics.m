@@ -1,5 +1,6 @@
-function plot_fc_metrics(ax, fcs, optional)
+function plot_fc_metrics(ax, fcs)%, optional)
 
+    [~,~,num_windows] = size(fcs);
 
 
     %max_eigs is the maximum magnitude eigenvector for each covarianace matrix
@@ -18,6 +19,7 @@ function plot_fc_metrics(ax, fcs, optional)
         stein_diffs(j)  = psd_dist( fcs(:,:,j), fcs(:,:,j+1), 'stein');
         herdin_diffs(j) = psd_dist( fcs(:,:,j), fcs(:,:,j+1), 'herdin');
     end
+    
     yyaxis(ax,'left'); %main metric on left
     plot(ax, max_eigs(1,:), 'k', 'LineWidth', 1, 'DisplayName', '1 max |eigs|');
     hold(ax,'on');
@@ -25,6 +27,7 @@ function plot_fc_metrics(ax, fcs, optional)
     ylabel(ax, 'Max Eigs', 'FontSize', 15);
     set(ax, 'YColor', 'k')
     
+    %{
     %plot horizontal line where cutoff is
     %place txt which shows percentile and corresponding raw value on this line
     txt = sprintf('%.0f', optional.raw_cutoff);
@@ -33,7 +36,8 @@ function plot_fc_metrics(ax, fcs, optional)
     end
     xline(ax, optional.raw_cutoff, 'y', txt, 'FontSize', 10,...
         'LabelHorizontalAlignment', 'center');
-
+    %}
+    
     %highlight xticks that were/would be removed!
 
    
@@ -46,31 +50,12 @@ function plot_fc_metrics(ax, fcs, optional)
     set(ax, 'YColor', 'm') % set y axis color to same as line color
     %}
     hold(ax, 'off');
+    xlabel(ax, 'Windows');
+    %ylim(ax, [0,100])
+    legend(ax)
+
 end
 
-xlabel(ax, 'Windows');
-%ylim(ax, [0,100])
-legend(ax)
-
-
-
-
-
-
-%{ from plot scalars
-yyaxis(ax,'left'); %main metric on left
-plot(ax, energy, 'k', 'LineWidth', 1, 'DisplayName', 'signal energy');
-hold(ax, 'on');
-lpr_int = sprintf('lpf [%d,%d]',low_freq_interval(1), low_freq_interval(2));
-plot(ax, lpf_energy, 'k-', 'LineWidth', 1, 'DisplayName', lpr_int);
-mpr_int = sprintf('mpf [%d,%d]', med_freq_interval(1), med_freq_interval(2));
-plot(ax, mpf_energy, 'k--', 'LineWidth', 1, 'DisplayName', mpr_int);
-hpr_int = sprintf('hpf [%d,%d]', high_freq_interval(1), high_freq_interval(2));
-plot(ax, hpf_energy, 'k:', 'LineWidth', 1, 'DisplayName', hpr_int);
-
-ylabel(ax, 'energy in freq range', 'FontSize', 15);
-set(ax, 'YColor', 'k') % set y axis color to same as line color
-%}
 
 
 %{
@@ -91,10 +76,4 @@ xlabel(ax, 'Window')
 %ylim(ax, [0,100])
 legend(ax)
 %}
-
-
-
-
-
-end
 

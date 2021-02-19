@@ -25,17 +25,24 @@ else
     legend_handles = gobjects(1,length(intervals) + 2); %^+data points
 end
 
+%% LEFT is raw energy axis
 if normalize
     yyaxis(ax,'left');
 end
+% should we plot the line on the left y axis?
+%if optional.plot_cutoff_line && isequal(optional.cutoff_line_y_axis, 'left')
+%    yline(ax, optional.cutoff, 'g', 'LineWidth', 2);
+%end
+    
 
-legend_handles(1) = plot(ax, energy, 'k', 'LineWidth', 1, 'DisplayName', 'signal energy');;
+legend_handles(1) = plot(ax, energy, 'k', 'LineWidth', 1, 'DisplayName', 'signal energy');
 ylabel(ax, 'Energy', 'FontSize', 12);
-ylim(ax, [0, max(energy)]);
+%ylim(ax, [0, max(energy)]);
 hold(ax, 'on');
 
-%show normalized distribution of energies on right y axis  
+%% RIGHT is normalized distribution of energies
 if normalize
+    %ylim(ax, [min(energy), max(energy)]); %set limits of raw on LHS
     yyaxis(ax,'right');
     energy_in_range = energy_in_range./energy;
 end
@@ -47,16 +54,6 @@ for j = 1:length(intervals)
 	interval_label = sprintf('%s [%d,%d]',interval_labels{j}, interval(1), interval(2));
     legend_handles(j+1) = plot(ax, energy_in_range(j,:), line_color, 'LineWidth', 1, 'DisplayName', interval_label);
 end
-
-
-%% if a raw threshold was used, place line showing the threshold value
-if normalize
-    optional.cutoff = optional.cutoff/100;
-end
-if optional.plot_cutoff_line || normalize
-    yline(ax, optional.cutoff, 'g', 'LineWidth', 2);
-end
-
 
 %find where values are the smallest so as to place text in convient
 %location to not block data
@@ -90,11 +87,22 @@ end
 %xlabel(ax, 'time','FontSize', 15);
 if normalize
     ylabel(ax, 'Fraction Energy in Range', 'FontSize', 12);
+    ylim(ax, [0, 1]);
     set(ax, 'YColor', 'r')
-else
-    %yyaxis(ax,'right');
-    %ylabel(ax, '', 'FontSize', 1);
 end
+
+%% plot threshold line
+% should we plot the line on the left y axis?
+if optional.plot_cutoff_line
+    if isequal(optional.cutoff_line_y_axis, 'right')
+        line_val = optional.cutoff/100;
+    else
+        line_val = optional.raw_cutoff;
+    end
+	yyaxis(ax,optional.cutoff_line_y_axis); %'left' or 'right'
+    yline(ax, line_val, 'g', 'LineWidth', 2);
+end
+
 
 legend(ax, legend_handles);
 hold(ax, 'off');
