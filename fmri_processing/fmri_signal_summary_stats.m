@@ -20,11 +20,8 @@ include_subcortical = true;
 subcortical_first = true;
 GSO = 'L';
 
-if include_subcortical
-    summary_stats_file = 'fmri_desikan_with_subcortical_summary_stats.mat';
-else
-    summary_stats_file = 'fmri_desikan_cortical_summary_stats.mat';
-end
+summary_stats_file = 'fmri_desikan_summary_stats.mat';
+
     
 if isfile(summary_stats_file)
     load(summary_stats_file);

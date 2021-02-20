@@ -13,7 +13,7 @@ clear; clc; close all;
 %% Define high level hp's
 raw_hcp_datafolder = '/Volumes/Elements/brain_data';
 
-sum_stat_file = load('fmri_desikan_with_subcortical_summary_stats.mat');
+sum_stat_file = load('fmri_desikan_summary_stats.mat');
 colormap_file = load("viz_fcs/correlations_colormap.mat");
 
 atlas = "desikan"; %"destrieux"

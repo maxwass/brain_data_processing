@@ -9,8 +9,14 @@ end
 %% load scs
 if atlas=="desikan"
     
+    %have we loaded the sc file (in the base workspace) yet?
+    sc_file_loaded = evalin("base","exist('scs_file', 'var')");
+    if sc_file_loaded
+        scs_file = evalin("base","scs_file");
+    end
+    
     % if file dne or it exists but wrong atlas...
-    if ~exist('scs_file','var') || ~strcmp(scs_file.atlas, atlas)
+    if ~sc_file_loaded || ~strcmp(scs_file.atlas, atlas)
             scs_file = load('scs_desikan.mat');
         
             %put into workspace so don't have to keep reloading.

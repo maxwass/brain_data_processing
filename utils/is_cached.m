@@ -8,6 +8,8 @@ function [cached, cached_filename] = is_cached(subject, atlas, chosen_roi, path2
 % include_subcortical :: logical
 % subcortical_first   :: logical
 
+load_and_check = false;
+
 % tasktype: str 'rfMRI_REST1'. Possibly include REST2 in future
 if contains(path2fmri, "REST1")
     tasktype = "rfMRI_REST1";
@@ -26,25 +28,37 @@ else
     error('Could not detect scan dir from fmri file name');
 end
 
-cached = false;
 
 cached_filename = sprintf('cached_%s/%s/%s_%s.mat', atlas, tasktype, subject, scan_dir);
+
 if isfile(cached_filename)
+    cached = true;
     
-    cached_fields = load(cached_filename, 'chosen_roi', 'scan', 'tasktype', 'atlas');
-    cached_scan_dir = "LR";
-    if contains(cached_fields.scan, "RL")
-        cached_scan_dir = "RL";
-    end
+    %should we load it and check params?
+    if load_and_check
+        cached_fields = load(cached_filename, 'chosen_roi', 'scan', 'tasktype', 'atlas');
+        if contains(cached_fields.scan, "RL")
+            cached_scan_dir = "RL";
+        else
+            cached_scan_dir = "LR";
+        end
     
-    if (isequal(chosen_roi.cortical, cached_fields.chosen_roi.cortical) && ...
-       isequal(chosen_roi.subcortical, cached_fields.chosen_roi.subcortical) && ...
-       isequal(scan_dir, cached_scan_dir) && ...
-       isequal(tasktype, cached_fields.tasktype) && ...
-       isequal(atlas, cached_fields.atlas) )
-        cached = true;
+        if (isequal(chosen_roi.cortical, cached_fields.chosen_roi.cortical) && ...
+        isequal(chosen_roi.subcortical, cached_fields.chosen_roi.subcortical) && ...
+        isequal(scan_dir, cached_scan_dir) && ...
+        isequal(tasktype, cached_fields.tasktype) && ...
+        isequal(atlas, cached_fields.atlas) )
+            correct = true;
+        else
+            correct = false;
+            error('Incorrect parameters in cached file...');
+        end
     end
+  
+else
+    cached = false;
 end
+
 
 
 end
