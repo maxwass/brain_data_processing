@@ -2,6 +2,11 @@ function fc_subsample_ds()
 
 %% Define inputs needed for each step in pipeline
 
+
+%% patient and scan info
+info = struct("atlas", 'desikan', "tasktype", 'rfMRI_REST1', "include_subcortical", true, "GSO", 'L', "rand_seed", 10);
+rng(info.rand_seed);
+
 %% Preprocess inputs
 preprocess_filter.filter          = false;
 preprocess_filter.name            = 'freq_distribution';
@@ -11,23 +16,30 @@ preprocess_filter.splits          = 3;
 
 
 %% Frequency filtering inputs
-freq_filter = struct('filter', false, 'intervals_to_keep', {[1,68]});
+freq_filter.filter = true;
+if info.include_subcortical
+    freq_filter.intervals_to_keep = {[2,87]}; % ,
+else
+    freq_filter.intervals_to_keep = {[2,68]};
+end
+
+range = '';
+for j = 1:length(freq_filter.intervals_to_keep)
+    interval_j = freq_filter.intervals_to_keep{j};
+    txt = sprintf('%d-%d_', interval_j(1), interval_j(2));
+    range = strcat(range, txt);
+end
+
+freq_filter.intervals_txt = range;
 
 
 %% Subset construction inputs
 subset_construction = struct("name", 'windowing', 'windowsize', 400, 'movesize', 400);
-%subset_construction = struct("name", 'sampling', "num_subsets", 5, "sps", 400, "with_replacement", false);
+%subset_construction = struct("name", 'sampling', "num_subsets", 3, "sps", 700, "with_replacement", false);
 
 %% Post processing inputs
 fc_filter = struct('filter', false, 'name', 'eig', 'which_eig', 1, 'threshold', 90, 'use_percentile', true);
 
-
-%% for repeatable results
-rand_seed = 10;
-rng(rand_seed);
-
-%% patient and scan info
-info = struct("atlas",'desikan', "tasktype", 'rfMRI_REST1', "include_subcortical", true, "GSO", 'L', "rand_seed", rand_seed);
 
 [fcs_tensor, scs_tensor, subject_ids, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
 
@@ -50,7 +62,9 @@ if preprocess_filter.filter
 end
 
 if freq_filter.filter
-    error("not implimented");
+    filename = sprintf("%s_freq_intervals_kept%s_includesubcort%d", filename, ...
+        freq_filter.intervals_txt,...
+        info.include_subcortical);
 end
 
 if fc_filter.filter
@@ -140,7 +154,7 @@ subject_ids = zeros(3000,1,'uint32');
 
 num_iters = 0;
 total_time = 0;
-num_scans = 0;
+num_scans = 0; %total scans
 total_fcs = 0;
 for subject_idx = 1:length(subject_list)
     subject     = char(num2str(subject_list(subject_idx,:)));
