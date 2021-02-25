@@ -1,11 +1,10 @@
-function fc_subsample_ds()
-
+function fc_subsample_ds(intervals_to_keep, include_subcortical)
 %% Define inputs needed for each step in pipeline
 
-
 %% patient and scan info
-info = struct("atlas", 'desikan', "tasktype", 'rfMRI_REST1', "include_subcortical", true, "GSO", 'L', "rand_seed", 10);
+info = struct("atlas", 'desikan', "tasktype", 'rfMRI_REST1', "include_subcortical", include_subcortical, "GSO", 'L', "rand_seed", 10);
 rng(info.rand_seed);
+
 
 %% Preprocess inputs
 preprocess_filter.filter          = false;
@@ -14,23 +13,15 @@ preprocess_filter.threshold       = 90;
 preprocess_filter.use_percentile  = true;
 preprocess_filter.splits          = 3;
 
-
 %% Frequency filtering inputs
 freq_filter.filter = true;
+freq_filters.intervals_to_keep = intervals_to_keep;
 if info.include_subcortical
-    freq_filter.intervals_to_keep = {[2,29],[59,87]}; %
+    freq_filter.intervals_to_keep = intervals_to_keep;% {[2,29],[59,87]}; %
 else
-    freq_filter.intervals_to_keep = {[2,68]};
+    freq_filter.intervals_to_keep = intervals_to_keep; %{[2,68]};
 end
-
-range = '';
-for j = 1:length(freq_filter.intervals_to_keep)
-    interval_j = freq_filter.intervals_to_keep{j};
-    txt = sprintf('%d-%d_', interval_j(1), interval_j(2));
-    range = strcat(range, txt);
-end
-
-freq_filter.intervals_txt = range;
+freq_filter.intervals_txt = intervals_to_string(freq_filters.intervals_to_keep);
 
 
 %% Subset construction inputs
@@ -41,24 +32,32 @@ subset_construction = struct("name", 'full');
 %% Post processing inputs
 fc_filter = struct('filter', false, 'name', 'eig', 'which_eig', 1, 'threshold', 90, 'use_percentile', true);
 
+%% create unique filename based on filters and save
+filepath = unique_filename(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
 
-%[fcs_tensor, scs_tensor, subject_ids, python_indices_tensor, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
+%% Create actual dataset
 [data, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
 
-%% save tensor
-% combine info and filters for unique filename
-filename = sprintf("%s", subset_construction.name);
+save(filepath, "data", "subset_construction", "preprocess_filter", "freq_filter", "fc_filter", "info", "chosen_roi", '-v7');
+
+end
+
+function filepath = unique_filename(preprocess_filter, freq_filter, subset_construction, fc_filter, info)
+
+%% combine info and filters for unique filename
+
 if isequal(subset_construction.name, "windowing")
-    filename = sprintf("%s_windowsize%d_movesize%d", filename, ...
+    subset_construction_txt = sprintf("windowsize%d_movesize%d", ...
         subset_construction.windowsize,...
         subset_construction.movesize);
 elseif isequal(subset_construction.name, "sampling")
-    filename = sprintf("%s_numsubsets%d_sps%d_withreplacement%d", filename, ...
+    subset_construction_txt = sprintf("numsubsets%d_sps%d_withreplacement%d", ...
         subset_construction.num_subsets,...
         subset_construction.sps,...
         subset_construction.with_replacement);
 else
-    %using full to make fc. filename currently 'full.mat'.
+    %using full to make fc
+    subset_construction_txt = "";
 end
 
 if preprocess_filter.filter
@@ -66,16 +65,18 @@ if preprocess_filter.filter
 end
 
 if freq_filter.filter
-    filename = sprintf("%s_freq_intervals_kept%s_includesubcort%d", filename, ...
-        freq_filter.intervals_txt,...
-        info.include_subcortical);
+    freq_intervals_kept_txt = sprintf("FreqIntervalsKept%s", freq_filter.intervals_txt);
+else
+    freq_intervals_kept_txt = sprintf("FreqIntervalsKept1-87");
 end
 
 if fc_filter.filter
     error("not implimented");
 end
 
+filename = sprintf("%s%s", subset_construction_txt, freq_intervals_kept_txt);
 
+%% each subset technique has own folder
 if isequal(subset_construction.name, "windowing")
     filepath = fullfile("data", "cached_subset_datasets_REST1", "windowing", filename);
 elseif isequal(subset_construction.name, "sampling")
@@ -85,10 +86,6 @@ elseif isequal(subset_construction.name, "full")
 else
     error('Dont know where to save data to');
 end
-
-save(filepath, "data", "subset_construction", "preprocess_filter", "freq_filter", "fc_filter", "info", "chosen_roi", '-v7');
-%save(filepath, "fcs_tensor", "scs_tensor", "subject_ids", "python_indices_tensor", "subset_construction", "preprocess_filter", "freq_filter", "fc_filter", "info", "chosen_roi", '-v7');
-
 
 end
 
@@ -335,6 +332,17 @@ python_indices_tensor = matlab_indices_tensor-1;
 subject_ids = subject_ids(1:num_scans); %check that num_scans correct to use
 %}
 
+end
+
+function  txt = intervals_to_string(intervals)
+    txt = '';
+    for j = 1:length(intervals)
+        interval_j = intervals{j};
+        new_txt = sprintf('%d-%d_', interval_j(1), interval_j(2));
+        txt = strcat(txt, new_txt);
+    end
+    
+    txt = txt(1:end-1);
 end
 
 function [ranges] = construct_freq_ranges(num_rois, splits)
