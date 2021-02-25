@@ -4,7 +4,7 @@ function plot_grid(app)
 dtseries_summary_fc = [];
 if use_all_signals
     dtseries_summary_fc = app.dtseries_mean_center_all;
-elseif app.raw_filter_rm_from_fc_comp.Value
+elseif app.raw_filter_rm_frcom_fc_comp.Value
     dtseries_summary_fc = app.dtseries_mean_center_all';
     dtseries_summary_fc(:, app.removed_dtseries_idxs) =[];
     summary_fc = cov(z');

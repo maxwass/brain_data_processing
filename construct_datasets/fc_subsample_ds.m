@@ -18,7 +18,7 @@ preprocess_filter.splits          = 3;
 %% Frequency filtering inputs
 freq_filter.filter = true;
 if info.include_subcortical
-    freq_filter.intervals_to_keep = {[2,87]}; % ,
+    freq_filter.intervals_to_keep = {[2,29],[59,87]}; %
 else
     freq_filter.intervals_to_keep = {[2,68]};
 end
@@ -34,14 +34,16 @@ freq_filter.intervals_txt = range;
 
 
 %% Subset construction inputs
-subset_construction = struct("name", 'windowing', 'windowsize', 400, 'movesize', 400);
+subset_construction = struct("name", 'full');
+%subset_construction = struct("name", 'windowing', 'windowsize', 400, 'movesize', 400);
 %subset_construction = struct("name", 'sampling', "num_subsets", 3, "sps", 700, "with_replacement", false);
 
 %% Post processing inputs
 fc_filter = struct('filter', false, 'name', 'eig', 'which_eig', 1, 'threshold', 90, 'use_percentile', true);
 
 
-[fcs_tensor, scs_tensor, subject_ids, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
+%[fcs_tensor, scs_tensor, subject_ids, python_indices_tensor, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
+[data, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
 
 %% save tensor
 % combine info and filters for unique filename
@@ -50,11 +52,13 @@ if isequal(subset_construction.name, "windowing")
     filename = sprintf("%s_windowsize%d_movesize%d", filename, ...
         subset_construction.windowsize,...
         subset_construction.movesize);
-else
+elseif isequal(subset_construction.name, "sampling")
     filename = sprintf("%s_numsubsets%d_sps%d_withreplacement%d", filename, ...
         subset_construction.num_subsets,...
         subset_construction.sps,...
         subset_construction.with_replacement);
+else
+    %using full to make fc. filename currently 'full.mat'.
 end
 
 if preprocess_filter.filter
@@ -71,14 +75,26 @@ if fc_filter.filter
     error("not implimented");
 end
 
-save(filename, "fcs_tensor", "scs_tensor", "subject_ids", "subset_construction", "preprocess_filter", "freq_filter", "fc_filter", "info", "chosen_roi");
+
+if isequal(subset_construction.name, "windowing")
+    filepath = fullfile("data", "cached_subset_datasets_REST1", "windowing", filename);
+elseif isequal(subset_construction.name, "sampling")
+    filepath = fullfile("data", "cached_subset_datasets_REST1", "sampling", filename);
+elseif isequal(subset_construction.name, "full")
+    filepath = fullfile("data", "cached_subset_datasets_REST1", "full", filename);
+else
+    error('Dont know where to save data to');
+end
+
+save(filepath, "data", "subset_construction", "preprocess_filter", "freq_filter", "fc_filter", "info", "chosen_roi", '-v7');
+%save(filepath, "fcs_tensor", "scs_tensor", "subject_ids", "python_indices_tensor", "subset_construction", "preprocess_filter", "freq_filter", "fc_filter", "info", "chosen_roi", '-v7');
 
 
 end
 
 
 
-function [fcs_tensor, scs_tensor, subject_ids, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info)
+function [data, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info)
 % subset_construction ::  struct. 
 %  If name == 'windowing'
 %       fields "windowsize" :: int, "movesize" :: int
@@ -118,7 +134,7 @@ if(strcmp(atlas,"desikan"))
 elseif(strcmp(atlas,"destrieux"))
     chosen_roi         = load('data/destrieux_roi_zhengwu', 'roi').roi;
     error("Atlas " + atlas + " has not been implimented yet...")
-else
+    elsea
 	error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
 end
 
@@ -147,16 +163,20 @@ subject_list   = fc_sc_set_file.exist_any_fc_and_sc; % (1064x1 int64)
 
 %% loop through all scans
 % preallocate if slow
+data = repmat(struct('subject_id',-1,'lr_fcs',[], 'rl_fcs', [],'sc',zeros(num_rois,num_rois)),length(subject_list),1);
 fcs = {};
 scs = {};
 fcs_per_scan = {};
 subject_ids = zeros(3000,1,'uint32');
+
+
 
 num_iters = 0;
 total_time = 0;
 num_scans = 0; %total scans
 total_fcs = 0;
 for subject_idx = 1:length(subject_list)
+    subject_int = subject_list(subject_idx,:);
     subject     = char(num2str(subject_list(subject_idx,:)));
     path_to_LR1 = [raw_hcp_datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
     path_to_RL1 = [raw_hcp_datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
@@ -181,6 +201,14 @@ for subject_idx = 1:length(subject_list)
         [GFT, evals_vec] = extract_GFT(subject, atlas, include_subcortical, GSO);
         iGFT = GFT';
     end
+    
+    %% extract once for both lr/rl
+    [A] = extract_sc(subject, atlas, include_subcortical);
+    
+    %% populate non-fc components of struct
+    begin_flag = true;
+    data(subject_idx).subject_id = subject_int;
+    data(subject_idx).sc = A;
     
     start = tic();
     fprintf('starting %d/%d: (%d scans)...', subject_idx, length(subject_list), length(path2fmris));
@@ -211,15 +239,18 @@ for subject_idx = 1:length(subject_list)
         %% compute (sampled/windowed) subsets of signals and their respective fcs
         if isequal(subset_construction.name, 'windowing')
             x_subsets = windowed_signals(x, subset_construction.windowsize, subset_construction.movesize);
+            covs = apply_to_tensor_slices(@(z) cov(z'), x_subsets);
+            [~,~,num_fcs] = size(covs);
         elseif isequal(subset_construction.name, 'sampling')
             x_subsets = random_subsets(x,  subset_construction.num_subsets, subset_construction.sps, subset_construction.with_replacement);
+            covs = apply_to_tensor_slices(@(z) cov(z'), x_subsets);
+            [~,~,num_fcs] = size(covs);
+        elseif isequal(subset_construction.name, 'full')
+            covs = cov(x');
+            num_fcs = 1;
         else
             error('incorrect option: %s', subset_construction);
         end
-        
-        covs = apply_to_tensor_slices(@(z) cov(z'), x_subsets);
-        [~,~,num_windows] = size(covs);
-
         
         %% post-processing on fcs
         if fc_filter.filter
@@ -228,24 +259,47 @@ for subject_idx = 1:length(subject_list)
             error('correct tensor construction...relies on same number of fcs per patient');
         end
         
-        %% place into tensors
-        [A] = extract_sc(subject, atlas, include_subcortical);
+        
+        % initialize data struct now that we know the sizes
+        if (subject_idx == 1) && begin_flag
+            s = struct('subject_id',-1,'contains_lr',false, 'contains_rl', false, 'lr_fcs', zeros(num_rois,num_rois,num_fcs), 'rl_fcs', zeros(num_rois,num_rois,num_fcs), 'sc', zeros(num_rois,num_rois));
+            data = repmat(s,length(subject_list),1);
+            data(1).sc = A;
+            data(1).subject_id = subject_int;
+            begin_flag = false;
+        end
+        
+        %populate covs portion of struct
+        if contains(path2fmri, 'LR')       
+            data(subject_idx).contains_lr = true;
+            data(subject_idx).lr_fcs = covs;
+        elseif contains(path2fmri, 'RL')
+            data(subject_idx).contains_rl = true;
+            data(subject_idx).rl_fcs = covs;
+        else
+            error('unrecgonized scan dir');
+        end
+        
         
         num_scans = num_scans + 1;
         fcs{end+1} = covs;
         scs{end+1} = A; %repmat(A, 1,1, num_windows); %to save memory, we can repmat in python later
-        subject_ids(num_scans)  = int32(str2double(subject));
+        subject_ids(num_scans)  = int32(str2double(subject)); %correct index?
 
-        [~,~,num_fcs] = size(covs);
-        total_fcs     = total_fcs + num_fcs;
+        total_fcs = total_fcs + num_fcs;
         if num_fcs < 1
             error('%s: filtered out ALL fcs.', subject);
         end
-        fcs_per_scan{end+1} = num_fcs; %
+        
+        
+        
+        
+        
         
         %optional viz
         %corrs = apply_to_tensor_slices(@corrcov, covs);
         %inspect_fcs_sc(corrs, 99, A);
+        %inspect_fcs_sc(corrcov(covs), 99, A);
         
        
     end
@@ -261,20 +315,25 @@ for subject_idx = 1:length(subject_list)
     disp(txt);
 end
 
+%{
 fcs_tensor = zeros(num_rois, num_rois, total_fcs);
 scs_tensor = zeros(num_rois, num_rois, total_fcs);
-    
+matlab_indices_tensor = zeros(total_fcs,2, 'uint16');
+
 global_start_idx = 1;
 for l = 1:length(fcs)
     global_end_idx = global_start_idx + fcs_per_scan{l} - 1; % may be different number of scans if filtered
-    
     fcs_tensor(:,:, global_start_idx:global_end_idx) = fcs{l};
 	scs_tensor(:,:, global_start_idx:global_end_idx) = repmat(scs{l},1,1,fcs_per_scan{l});
-    
+    matlab_indices_tensor(l,:) = [global_start_idx, global_end_idx];
     global_start_idx =  global_end_idx+1;
+    
 end
 
+python_indices_tensor = matlab_indices_tensor-1;
+
 subject_ids = subject_ids(1:num_scans); %check that num_scans correct to use
+%}
 
 end
 
@@ -296,9 +355,6 @@ end
 ranges{end} = [first, num_rois]; %last one always has equal to/more than rest
 
 end
-
-
-
 
 function inspect_fcs_sc(fcs, percentile, sc)
     [N,~,num_fcs] = size(fcs);
