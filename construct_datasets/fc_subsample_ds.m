@@ -230,7 +230,7 @@ for subject_idx = 1:length(subject_list)
         
         %% frequency filter signals
         if freq_filter.filter
-            [x] = iGFT*freq_filtering(GFT*x, freq_filter.intervals_to_keep);
+            [x] = iGFT*freq_filtering_idx(GFT*x, freq_filter.intervals_to_keep);
         end
                 
         %% compute (sampled/windowed) subsets of signals and their respective fcs

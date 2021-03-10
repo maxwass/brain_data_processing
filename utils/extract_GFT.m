@@ -30,11 +30,17 @@ evecs = evecs(:,ind);
 %ensure eigenvector corresponnding to 0 freq (constant) is positive. For
 %laplacian, this represents the average value of all nodes, which for us
 %is non-negative. Thus for more intuitive plotting, make positive.
-zero_idx = find((abs(evals_vec)<.0000001));
+zero_idx = find( abs(evals_vec) < 1e-8 );
 if ~isempty(zero_idx)
-    %pointing in 'positive' (1st quadrant) or 'negative' (3rd quadrant) direction?
+    
+    % this should likely be equal to zero (Laplacian, Laplacian norm)
+    evals_vec(zero_idx) = 0.0;
+    
+    % pointing in 'positive' (1st quadrant) or 'negative' (3rd quadrant) direction?
     zero_eigvec = evecs(:, zero_idx);
-    is_neg = dot(ones(size(zero_eigvec)), zero_eigvec) < 0;
+    is_neg      = dot(ones(size(zero_eigvec)), zero_eigvec) < 0;
+    
+    % if eigvector pointing in negative direction, make positive
     if is_neg
         evecs(:, zero_idx) = -1*evecs(:, zero_idx);
     end

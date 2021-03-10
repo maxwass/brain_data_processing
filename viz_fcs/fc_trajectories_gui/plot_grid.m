@@ -237,9 +237,15 @@ else
 	%ave_signal_windows_freq_reprs = app.ave_signal_windows_freq;
 end
 
-y_max_freq = max(max(ave_signal_windows_freq)); %use percentile instead?
-y_min_freq = min(min(ave_signal_windows_freq));
+use_magnitude = true;
 
+if use_magnitude
+    y_max_freq = max(max(abs(ave_signal_windows_freq)));
+    y_min_freq = 0;
+else
+    y_max_freq = max(max(ave_signal_windows_freq)); %use percentile instead?
+    y_min_freq = min(min(ave_signal_windows_freq));
+end
 num_jumps_delete = app.xbreaksSpinner.Value;
 space = 0.03*(max(app.eigvals)-min(app.eigvals));
 eig_diffs = diff(app.eigvals);
@@ -262,7 +268,11 @@ for i = app.low_index:app.high_index
 	row = row + 1;
 	ax = app.axes.wdw_features(row,freq_col);
     %yyaxis(ax,'right');
-	freq_plot = stem(ax, plot_eigs, ave_signal_windows_freq(:,i), 'MarkerEdgeColor','green', 'color', 'k');
+    signal_f_i = ave_signal_windows_freq(:,i);
+    if use_magnitude
+        signal_f_i = abs(signal_f_i);
+    end
+	freq_plot = stem(ax, plot_eigs, signal_f_i, 'MarkerEdgeColor','green', 'color', 'k');
 	
     set(ax,'xtick',[]);
     set(ax,'xticklabel',[]);
@@ -271,7 +281,7 @@ for i = app.low_index:app.high_index
     end
     
     ylim(ax,[y_min_freq,y_max_freq])
-    xlim(ax,[min(plot_eigs), max(plot_eigs)]);
+    xlim(ax,[min(plot_eigs)-.1, max(plot_eigs)]);
     str = sprintf('Filtered Energy (mean centered): %.0f', centered_energies(i) );
     text(ax, 'String', str, 'Units', 'normalized', 'Position', [.6, .1])
 	%xlabel(ax,'freq');
@@ -303,20 +313,45 @@ end
 %%IF ONLY 1 PLOT THEN NO EVENS AND ODDS!
 
 %make odd plots have xticks as the idxs
+eigs_or_indices = 'eigs';
+if isequal(eigs_or_indices, 'eigs')
+    xticks_labels = app.eig_labels;
+else
+    xticks_labels = app.eig_idxs;
+end
+    
+xticks(freq_axes, plot_eigs);
+xticklabels(freq_axes, xticks_labels);
+set(freq_axes,'fontsize',7);
+%xlabel(freq_axes(1:2:end), 'Eigval IDX');
+xtickangle(freq_axes, 45)
+    
+    
+%{
 xticks(freq_axes(1:2:end), plot_eigs);
 xticklabels(freq_axes(1:2:end), app.eig_idxs);
 set(freq_axes(1:2:end),'fontsize',7);
 %xlabel(freq_axes(1:2:end), 'Eigval IDX');
 xtickangle(freq_axes(1:2:end), 45)
 
-if app.num_windows>1
+
+%if app.NumWindowPlotSpinner.Value>1
+xticks(freq_axes, plot_eigs)
+xticklabels(freq_axes, app.eig_labels);
+set(freq_axes,'fontsize',7);
+xtickangle(freq_axes, 45)
+%xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
+%}
+
+    %{
     %make even plots have the xticks as the eigenvalues
     xticks(freq_axes(2:2:end), plot_eigs)
     xticklabels(freq_axes(2:2:end), app.eig_labels);
     set(freq_axes(2:2:end),'fontsize',7);
     xtickangle(freq_axes(2:2:end), 45)
     %xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
-end
+    %}
+
 
 
 if app.raw_filter_rm_from_fc_comp.Value

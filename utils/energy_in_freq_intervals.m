@@ -18,7 +18,7 @@ function [energy_contributions] = energy_in_freq_intervals(x_freq, intervals)
 
         %filter each signal (column) for components in this frequency
         %interval
-        x_freq_band = freq_filtering(x_freq, {intervals{i}});
+        x_freq_band = freq_filtering_idx(x_freq, {intervals{i}});
         
         %compute energy in this frequency interval for each signal
         energy_contributions(i,:) = vecnorm(x_freq_band,2).^2;
