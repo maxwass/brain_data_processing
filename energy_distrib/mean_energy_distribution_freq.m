@@ -54,7 +54,11 @@ average_node_value = mean(average_vector);
 atlas = "desikan"; %"destrieux"
 tasktype='rfMRI_REST1'; %'tfMRI_GAMBLING'; 'tfMRI_MOTOR'; 'tfMRI_GAMBLING'; 'tfMRI_SOCIAL'; 'tfMRI_LANGUAGE';
 sub_tasktype = 'REST1';
-GSO = 'A_norm';
+GSO = 'L';
+%GSO = 'L_norm';
+%GSO = 'A';
+%GSO = 'A_norm';
+
 
 if(strcmp(atlas,"desikan"))
     chosen_roi         = load('data/desikan_roi_zhengwu', 'roi').roi;
@@ -73,7 +77,6 @@ end
 % save full cov (87x87) and remove subcortical later
 
 num_subjects  = length(subject_list);
-ave_node_val = 70000;
 
 
 mean_freq_signal = zeros(num_rois, 3000);
@@ -109,7 +112,8 @@ for i_index = 1:length(subject_list)
     % attempt load lr
     if has_cached_lr
         dtseries_lr = load(cached_filename_lr).dtseries;
-        x_mean_lr = mean(dtseries_lr, 2) - ave_node_val ; %across rows
+        x_mean_lr = mean(dtseries_lr, 2) - average_node_value ; %across rows
+        x_mean_lr = x_mean_lr(roi_idxs, :);
         x_mean_freq_lr = GFT*x_mean_lr;  
         counter = counter + 1;
         mean_freq_signal(:, counter)  = x_mean_freq_lr;
@@ -119,7 +123,8 @@ for i_index = 1:length(subject_list)
     % attempt load rl
     if has_cached_rl
         dtseries_rl = load(cached_filename_rl).dtseries;
-        x_mean_rl = mean(dtseries_rl, 2) - ave_node_val ; %across rows
+        x_mean_rl = mean(dtseries_rl, 2) - average_node_value ; %across rows
+        x_mean_rl = x_mean_rl(roi_idxs, :);
         x_mean_freq_rl = GFT*x_mean_rl; 
 
         counter = counter + 1;
@@ -135,5 +140,10 @@ freqs = freqs(:, 1:counter);
 
 % save this data
 filename = sprintf('GSO-%s_%s_%s--freq_distrib', GSO, atlas, sub_tasktype);
-save(filename, 'mean_freq_signal', 'freqs');
+if include_subcortical
+    filepath = fullfile("energy_distrib", "ed_data", "GFT_using_subcortical", filename);
+else
+    filepath = fullfile("energy_distrib", "ed_data", "GFT_only_cortical", filename);
+end
+save(filepath, 'mean_freq_signal', 'freqs');
    
