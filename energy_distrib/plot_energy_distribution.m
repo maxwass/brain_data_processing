@@ -15,6 +15,7 @@ axes = gobjects(4,2);
 GSO = 'L_norm';
 axes(1,1) = plot_histogram(GSO, include_subcortical, b, false);
 axes(1,2) = plot_histogram(GSO, ~include_subcortical, b, false);
+% overlay total variations/zero crossings?
 linkaxes(axes(1,:),'xy')
 
 GSO = 'L';
@@ -31,9 +32,12 @@ GSO = 'A_norm';
 axes(4,1) = plot_histogram(GSO, include_subcortical, b, false);
 axes(4,2) = plot_histogram(GSO, ~include_subcortical, b, false);
 linkaxes(axes(4,:),'xy')
-set(axes, 'YScale', 'log');
-ylabel(axes, 'Log_10( Energy )');
+%set(axes, 'YScale', 'log');
+%ylabel(axes, 'Log_10( Energy )');
 %set(axes, 'YScale', 'linear');
+
+grid(axes, 'MINOR')
+%ylim(axes, [0,10^11]);
 
 
 function ax = plot_histogram(GSO, include_subcortical, bin_width, remove_first)
