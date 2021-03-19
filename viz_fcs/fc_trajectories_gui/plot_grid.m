@@ -228,28 +228,42 @@ linkaxes(fc_axes,'xy');
 % Find largest num_jumps_delete jumps between eigenvalues and shorten them
 % to be space length. New shifted eigenvalues(plot_eigs) are for plotting
 % only.
+y_values_to_plot = 'energy'; % 'magnitude', 'raw';
+
 centered_energies = vecnorm(app.ave_signal_windows,2).^2;
-if strcmp(app.NormFreqDropDown.Value, 'L2 Norm')
-    %each signal is now L2 normed
-	ave_signal_windows_freq = app.GFT*(app.ave_signal_windows./vecnorm(app.ave_signal_windows));
-else
-    ave_signal_windows_freq = app.GFT*(app.ave_signal_windows);
-	%ave_signal_windows_freq_reprs = app.ave_signal_windows_freq;
+
+% L2 norming
+%ave_signal_windows_freq = app.GFT*(app.ave_signal_windows./vecnorm(app.ave_signal_windows));
+ave_signal_windows_freq = app.GFT*(app.ave_signal_windows);
+
+if isequal(y_values_to_plot, 'raw')
+    y_values = ave_signal_windows_freq;
+    y_max = max(max(y_values)); %use percentile instead?
+    y_min = min(min(y_values));
+elseif isequal(y_values_to_plot, 'magnitude')
+    y_values = abs(ave_signal_windows_freq);
+    y_max = max(max(y_values));
+    y_min = 0;
+elseif isequal(y_values_to_plot, 'energy')
+    y_values = ave_signal_windows_freq.^2;
+    y_max = max(max(y_values));
+    y_min = 0;
 end
 
-use_magnitude = true;
-
-if use_magnitude
-    y_max_freq = max(max(abs(ave_signal_windows_freq)));
-    y_min_freq = 0;
-else
-    y_max_freq = max(max(ave_signal_windows_freq)); %use percentile instead?
-    y_min_freq = min(min(ave_signal_windows_freq));
+%% remove jumps between large gaps in x-axis (i.e. eigenvalues/total variations)
+x_values_to_plot = 'Total Variations'; %'eigvals'; 'zcs';
+if isequal(x_values_to_plot, 'Total Variations')
+    x_values = app.total_variations;
+    [x_labels, ~] = create_labels(x_values, app.sig_digs, app.eig_label_sparse_middle_jumps);
+elseif isequal(x_values_to_plot, 'eigvals')
+    x_values = app.eigvals;
+    [x_labels, ~] = create_labels(x_values, app.sig_digs, app.eig_label_sparse_middle_jumps);
 end
+
 num_jumps_delete = app.xbreaksSpinner.Value;
-space = 0.03*(max(app.eigvals)-min(app.eigvals));
-eig_diffs = diff(app.eigvals);
-[largest_diffs,left_idx_largest_diffs] = maxk(eig_diffs,num_jumps_delete);
+space = 0.03*(max(x_values)-min(x_values));
+x_diffs = diff(x_values);
+[largest_diffs,left_idx_largest_diffs] = maxk(x_diffs,num_jumps_delete);
 
 %sort so that we can do order sensitive operations next
 [left_idx_largest_diffs, B] = sort(left_idx_largest_diffs, 'ascend');
@@ -257,34 +271,29 @@ largest_diffs = largest_diffs(B);
 
 %shift eigvals over from largest differnce to smallest difference
 % must do it this way to keep eigenvalues consistant (?)
-plot_eigs = app.eigvals;
 for i = num_jumps_delete:-1:1
-    plot_eigs(left_idx_largest_diffs(i)+1:end) = plot_eigs(left_idx_largest_diffs(i)+1:end) - (largest_diffs(i) - space);
+    x_values(left_idx_largest_diffs(i)+1:end) = x_values(left_idx_largest_diffs(i)+1:end) - (largest_diffs(i) - space);
 end
 
+%% place plots
 row=0;
-% place plots
 for i = app.low_index:app.high_index
 	row = row + 1;
 	ax = app.axes.wdw_features(row,freq_col);
-    %yyaxis(ax,'right');
-    signal_f_i = ave_signal_windows_freq(:,i);
-    if use_magnitude
-        signal_f_i = abs(signal_f_i);
-    end
-	freq_plot = stem(ax, plot_eigs, signal_f_i, 'MarkerEdgeColor','green', 'color', 'k');
-	
+	%freq_plot = stem(ax, plot_eigs, signal_f_i, 'MarkerEdgeColor','green', 'color', 'k');
+	tv_plot = stem(ax, app.total_variations, y_values(:,i), 'MarkerEdgeColor','green', 'color', 'k');
     set(ax,'xtick',[]);
     set(ax,'xticklabel',[]);
     if i ~=app.high_index
         set(ax,'yticklabel',[]);
     end
     
-    ylim(ax,[y_min_freq,y_max_freq])
-    xlim(ax,[min(plot_eigs)-.1, max(plot_eigs)]);
+    ylim(ax,[y_min,y_max])
+    xlim(ax,[min(x_values)-.1, max(x_values)]);
     str = sprintf('Filtered Energy (mean centered): %.0f', centered_energies(i) );
     text(ax, 'String', str, 'Units', 'normalized', 'Position', [.6, .1])
 	%xlabel(ax,'freq');
+    ylabel(ax, y_values_to_plot);
 end
 freq_axes = app.axes.wdw_features(1:end,freq_col);
 linkaxes(freq_axes,'xy');
@@ -295,8 +304,8 @@ text_offset = .1; %how far offr horrizontal line should text be?
 for j = num_jumps_delete:-1:1
  
     % new x positions of removed larger interval
-	x0 = plot_eigs(left_idx_largest_diffs(j))+space/4;
-	x1 = plot_eigs(left_idx_largest_diffs(j))+3*space/4;
+	x0 = x_values(left_idx_largest_diffs(j))+space/4;
+	x1 = x_values(left_idx_largest_diffs(j))+3*space/4;
 	
     % draw vertical lines to denote where jump occured
     line(freq_axes(end), [x0, x0], [app.y_min-ax_offset, app.y_min+ax_offset], 'Color','red');
@@ -313,18 +322,16 @@ end
 %%IF ONLY 1 PLOT THEN NO EVENS AND ODDS!
 
 %make odd plots have xticks as the idxs
-eigs_or_indices = 'eigs';
-if isequal(eigs_or_indices, 'eigs')
-    xticks_labels = app.eig_labels;
-else
-    xticks_labels = app.eig_idxs;
-end
-    
-xticks(freq_axes, plot_eigs);
-xticklabels(freq_axes, xticks_labels);
+
+[x_values_sort, x_values_sort_idx] = sort(x_values); %must be in increasing sorted order
+[x_labels_sort] = x_labels(x_values_sort_idx);
+xticks(freq_axes, x_values_sort); 
+xticklabels(freq_axes, x_labels_sort);
 set(freq_axes,'fontsize',7);
 %xlabel(freq_axes(1:2:end), 'Eigval IDX');
 xtickangle(freq_axes, 45)
+xlabel(freq_axes(end), x_values_to_plot);
+ylabel(freq_axes(end), y_values_to_plot);
     
     
 %{
@@ -343,14 +350,14 @@ xtickangle(freq_axes, 45)
 %xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
 %}
 
-    %{
-    %make even plots have the xticks as the eigenvalues
-    xticks(freq_axes(2:2:end), plot_eigs)
-    xticklabels(freq_axes(2:2:end), app.eig_labels);
-    set(freq_axes(2:2:end),'fontsize',7);
-    xtickangle(freq_axes(2:2:end), 45)
-    %xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
-    %}
+%{
+%make even plots have the xticks as the eigenvalues
+xticks(freq_axes(2:2:end), plot_eigs)
+xticklabels(freq_axes(2:2:end), app.eig_labels);
+set(freq_axes(2:2:end),'fontsize',7);
+xtickangle(freq_axes(2:2:end), 45)
+%xlabel(freq_axes(2:2:end), 'Eigvalue (freq)');
+%}
 
 
 
@@ -359,7 +366,7 @@ if app.raw_filter_rm_from_fc_comp.Value
 else
     mean_over = 'all'; 
 end
-freq_txt = sprintf('$GFT_{%s}( \\bar{x}_{window(%d)} - \\bar{x}_{%s} )$ with %s', app.GSODropDown.Value, app.low_index, mean_over, app.NormFreqDropDown.Value);
+freq_txt = sprintf('$GFT_{%s}( \\bar{x}_{window(%d)} - \\bar{x}_{%s} )$', app.GSODropDown.Value, app.low_index, mean_over);
 text(freq_axes(1), 'String', freq_txt, 'Units', 'normalized', 'Position', [.55, .9], 'FontSize', 15,'Interpreter','Latex');
 
 %title(freq_axes(1), freq_txt,'FontSize', 15,'Interpreter','Latex');

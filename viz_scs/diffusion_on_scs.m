@@ -6,12 +6,12 @@ percentile = 90;
 
 %% some example polynomials
 og_p = [.5, .5, .2]; og_p_str = '[0.5, 0.5, 0.2]';
-regress_p = [-.18, 2.446, -.0211]; regress_p_str = 'regress';
+regress_p = (1/350)*[-.18, 2.446, -.0211]; regress_p_str = 'regress';
 
 p2 = [0.7385, -0.0107, 3.8339e-05];  p2_str = 'low pass';% [.73, -.01, 3.8e-05]'; % low pass 1
 %p3 = [1, -.0005, -.00005];  p3_str = '[1, -.0005, -.00005]'; % low pass 2
 p3 = [.49, .0163, -1.3061e-04]; p3_str = 'mid pass';% [.49, .0163, -.000013]'; % mid pass
-p4 = [0, -.005, .0001];  p4_str = 'high pass';% [0, -.005, .0001]'; % high pass
+p4 = (1/2)*[0, -.005, .0001];  p4_str = 'high pass';% [0, -.005, .0001]'; % high pass
 %p3 = [1, -.0001, +.00008]; p3_str = '[0, .0001, -.00008]';
 coeffs_list = {regress_p, p2, p3, p4};
 coeffs_list_str = {regress_p_str, p2_str, p3_str, p4_str};
@@ -22,7 +22,7 @@ t = tiledlayout(num_patients_plot, 2+length(coeffs_list)+2); %2xTV/ZC + SYNTH CO
 
 atlas = 'desikan';
 include_subcortical = 'false';
-GSO = 'A';
+GSO = 'A_norm';
 
 
 
@@ -68,28 +68,24 @@ for p = 1:num_patients_plot
     V = GFT';
     for l = 1:length(GFT)
         eig_vec = V(:,l);
-        zcs(l) = zero_crossings(eig_vec, A, 'max');
-        if all(abs(zero_crossings(eig_vec, A, 'max') - zero_crossings(eig_vec, A, 'gonz')) <.0001)
-            disp('both methods are equal');
-        else
-            %disp('methods are not equal');
-        end
+        zcs(l) = zero_crossings(eig_vec, A, 'total_variation');
     end
     L = diag(sum(A,2)) - A;
-    tvs = total_variations(V, L);
+    tvs = total_variation(V, L);
     
     % tv/zcs vs eigenvals
     ax = nexttile([1,2]);
     yyaxis(ax,'left');
     hold on;
-    plot(ax, eigvals, tvs, 'DisplayName', 'total variation: z^T*L*z');
+    plot(ax, eigvals, tvs, 'DisplayName', 'total variation');
     plot(ax, eigvals, zcs, 'DisplayName', 'zero crossing');
     xticks(ax, linspace(min(eigvals), max(eigvals), 5));
     ylabel('Measure of Variation');
     xlabel('Freqs'); 
     hold off;
-    yyaxis(ax,'right');
     
+    %% Polynomial filter used
+    yyaxis(ax,'right');
     hold on;
     for ps = 1:length(y_polys)
         plot(ax, x_polys, abs(y_polys{ps}), 'DisplayName', coeffs_list_str{ps});
@@ -158,9 +154,7 @@ for p = 1:num_patients_plot
 end
 
 
-%% load actual scans
-
-
+%% Misc funcs
 function S = which_GSO(GSO, A)
     [A_norm, L, L_norm] = compute_GSOs(A);
     if isequal(GSO, 'A')
@@ -176,24 +170,6 @@ function S = which_GSO(GSO, A)
     end
 end
 
-function x_diff_list = diffuse_signals_over_mat_list(H_list, x)
-    [m_x, n_x] = size(x); % x is matrix of column vectors
-
-    x_diff_list = {};
-    for h = 1:length(H_list)
-        H = H_list{h};
-        x_diff_list{end+1} = H*x;
-    end
-
-end
-
-function H_list = create_matrix_polynomials(coeffs_list, S)
-    H_list = {};
-    for h = 1:length(coeffs_list)
-        H_list{end+1} = matrix_polynomial(coeffs_list{h}, S);
-    end
-end
-
 function H = matrix_polynomial(coeffs, S)
     [m, n] = size(S);
     H = zeros(n, n);
@@ -202,43 +178,4 @@ function H = matrix_polynomial(coeffs, S)
         H = H + coeffs(l) * S^(l-1);
     end
 
-end
-
-% V is matrix of column vectors
-% L is laplacian matrix
-function tvs = total_variations(V, L)
-    [rows_l, cols_l] = size(L);
-    if rows_l ~= cols_l
-        error('laplacian must be square matrix');
-    end
-
-    [rows_v, num_v_vecs] = size(V);
-    if (rows_v ~= cols_l)
-        error('V and Ls shape incompatible');
-    end
-    tvs = diag(V' * L * V);
-end
-
-function zcs = zero_crossings(z, A, impl)
-    [m_a,n_a] = size(A);
-    if m_a ~= n_a
-        error('A must be square: %d x %d', m_a ,n_a);
-    end
-    
-    [m_z, n_z] = size(z);
-    if n_z ~= 1
-        error('z must be column vector');
-    end
-    
-    if m_z ~= n_a
-        error('z (%d, %d) and A (%d, %d) do not have compatible shape', m_z, n_z, m_a, n_a);
-    end
-    
-    if isequal(impl, 'max')
-        zcs = .5 * sum( (z*z'<0).*(A>0), 'all');
-    else
-        L = diag(sum(A,2)) - A;
-        zcs = .25 * total_variations(z,L);
-        
-    end
 end

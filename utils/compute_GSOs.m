@@ -15,7 +15,7 @@ L_norm = D_norm*L*D_norm;
 % this position should be 0
 L_norm(isnan(L_norm)) = 0.0;
 
-A_norm = D_norm*A*D_norm;
+A_norm = D_norm*A*D_norm; % Should A_norm be 1/eig_max * A??
 A_norm(isnan(A_norm)) = 0.0;
 
 if any(~D_vec)
