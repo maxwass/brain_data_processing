@@ -1,4 +1,4 @@
-function [which_idxs_remove, raw_threshold] = preprocess_signals(x, GFT, filter_params)
+function [which_idxs_remove, raw_threshold] = samples_to_remove(x, GFT, filter_params)
 %which signals to keep or remove
 
 which_metric   = filter_params.name;
@@ -52,7 +52,8 @@ elseif ismember("freq_distribution", which_metric)
     
     energy = vecnorm(x,2).^2;
     x_freq = GFT*x;
-    energy_contributions = energy_in_freq_intervals(x_freq, filter_params.ranges);
+    y = 1:length(GFT);
+    energy_contributions = energy_in_freq_intervals(x_freq, filter_params.ranges, y);
     lpf_energy = energy_contributions(1,:);
     lpf_energy_frac = lpf_energy./energy;
     

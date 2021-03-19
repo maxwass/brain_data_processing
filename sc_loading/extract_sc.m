@@ -1,4 +1,4 @@
-function [A] = extract_sc(subject, atlas, include_subcortical)
+function [A] = extract_sc(subject, atlas, include_subcortical) %roi interest
 %% load sc for subject from stored tensor file sent by Zhengwu
 
 if isa(subject, 'char') || isa(subject,'string')

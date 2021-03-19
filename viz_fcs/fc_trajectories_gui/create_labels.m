@@ -1,14 +1,14 @@
 function [labels, idxs] = create_labels(vals, sig_digs, k)
 
-%% eigenvalues can be very close together, making reading tick labels hard.
-% 1) Find dense area of eigenvalues, and only label beginning and end of
+%% vals can be very close together, making reading tick labels hard.
+% 1) Find dense area of vals, and only label beginning and end of
 % interval
 % 2) shorten label length
-eig_diffs = diff(vals);
-diff_threshold = prctile(eig_diffs, 50);
+diffs = diff(vals);
+diff_threshold = prctile(diffs, 50);
 
 
-diff_ = eig_diffs < diff_threshold;
+diff_ = diffs < diff_threshold;
 
 
 
@@ -23,6 +23,7 @@ idxs = {};
 
 for i = 1:length(vals)
     e = vals(i);
+    e = round(e,2); %
     s = num2str(e); % '%0.3940'
     last_idx = min(length(s),sig_digs);
     s = s(1:last_idx);

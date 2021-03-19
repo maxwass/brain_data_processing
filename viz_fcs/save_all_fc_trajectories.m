@@ -101,7 +101,7 @@ for i_index=1:length(subject_list)
         path2fmri = path_to_LR1;
         %load fmri data
         start = tic;
-        dtseries_lr = process_fmri(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi.cortical, chosen_roi.subcortical);
+        dtseries_lr = load_functional_dtseries(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi.cortical, chosen_roi.subcortical);
         %created windowed fcs and ave signals
         signal_windows_lr = windowed_signals(dtseries_lr,fc_traj_params.windowsize, fc_traj_params.movesize);
         covs_lr  = apply_to_tensor_slices(@(x) cov(x'), signal_windows_lr);

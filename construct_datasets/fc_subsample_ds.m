@@ -215,7 +215,7 @@ for subject_idx = 1:length(subject_list)
         
     
         %% load and center 'raw' fmri data. 
-        x        = process_fmri(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi);
+        x        = load_functional_dtseries(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi);
         x        = x - average_node_value; %
 
         if ~include_subcortical
@@ -224,13 +224,17 @@ for subject_idx = 1:length(subject_list)
 
         %% perform pre-preprocessing of 'raw' signals. This removes some subset of raw signals.
         if preprocess_filter.filter
-            [which_raw_idxs_remove, ~] = preprocess_signals(x, GFT, preprocess_filter);
+            [which_raw_idxs_remove, ~] = samples_to_remove(x, GFT, preprocess_filter);
             x(:, which_raw_idxs_remove) = [];
         end
         
         %% frequency filter signals
         if freq_filter.filter
-            [x] = iGFT*freq_filtering_idx(GFT*x, freq_filter.intervals_to_keep);
+            %[x] = iGFT*freq_filtering_idx(GFT*x, freq_filter.intervals_to_keep);
+            [idxs_to_remove] = ~intervals_to_logical_vec(freq_filter.intervals_to_keep, eigvals);
+            x_hat = GFT*x;
+            x_hat(idxs_to_remove,:) = 0;
+            x = iGFT*x_hat;
         end
                 
         %% compute (sampled/windowed) subsets of signals and their respective fcs

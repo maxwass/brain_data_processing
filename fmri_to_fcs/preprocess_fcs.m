@@ -62,7 +62,9 @@ switch which_metric
         ave_signal_subsets = apply_to_tensor_slices(@(x) mean(x,2), subsets);
         energy = vecnorm(ave_signal_subsets,2).^2;
         x_freq = GFT*ave_signal_subsets;
-        energy_contributions = energy_in_freq_intervals(x_freq, filter_params.ranges);
+        [num_eigs, ~] = size(GFT);
+        y = 1:length(num_eigs);
+        energy_contributions = energy_in_freq_intervals(x_freq, filter_params.ranges, y);
         lpf_energy = energy_contributions(1,:);
         lpf_energy_frac = lpf_energy./energy;
         

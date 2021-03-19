@@ -252,13 +252,24 @@ end
 
 %% remove jumps between large gaps in x-axis (i.e. eigenvalues/total variations)
 x_values_to_plot = 'Total Variations'; %'eigvals'; 'zcs';
-if isequal(x_values_to_plot, 'Total Variations')
+use_eig_order = contains(app.VariationDropDown.Value, "eig", "IgnoreCase", true);
+use_tv_l_order = contains(app.VariationDropDown.Value, "Lz", "IgnoreCase", true);
+use_tv_a_order = contains(app.VariationDropDown.Value, "Az", "IgnoreCase", true);
+use_zero_cross_order = contains(app.VariationDropDown.Value, "Zero-Crossings", "IgnoreCase", true);
+
+if use_tv_l_order
+    x_values_to_plot = 'Total Variations';
     x_values = app.total_variations;
-    [x_labels, ~] = create_labels(x_values, app.sig_digs, app.eig_label_sparse_middle_jumps);
-elseif isequal(x_values_to_plot, 'eigvals')
+elseif use_eig_order
+    x_values_to_plot = 'Eigenvalues';
     x_values = app.eigvals;
-    [x_labels, ~] = create_labels(x_values, app.sig_digs, app.eig_label_sparse_middle_jumps);
+elseif use_tv_a_order
+    error('not implimented');
+elseif use_zero_cross_order
+    x_values_to_plot = 'Zero-Crossings';
+    x_values = app.zero_crossings;
 end
+[x_labels, ~] = create_labels(x_values, app.sig_digs, app.eig_label_sparse_middle_jumps);
 
 num_jumps_delete = app.xbreaksSpinner.Value;
 space = 0.03*(max(x_values)-min(x_values));
@@ -281,9 +292,9 @@ for i = app.low_index:app.high_index
 	row = row + 1;
 	ax = app.axes.wdw_features(row,freq_col);
 	%freq_plot = stem(ax, plot_eigs, signal_f_i, 'MarkerEdgeColor','green', 'color', 'k');
-	tv_plot = stem(ax, app.total_variations, y_values(:,i), 'MarkerEdgeColor','green', 'color', 'k');
-    set(ax,'xtick',[]);
-    set(ax,'xticklabel',[]);
+	tv_plot = stem(ax, x_values, y_values(:,i), 'MarkerEdgeColor','green', 'color', 'k');
+    %set(ax,'xtick',[]);
+    %set(ax,'xticklabel',[]);
     if i ~=app.high_index
         set(ax,'yticklabel',[]);
     end
@@ -325,8 +336,12 @@ end
 
 [x_values_sort, x_values_sort_idx] = sort(x_values); %must be in increasing sorted order
 [x_labels_sort] = x_labels(x_values_sort_idx);
-xticks(freq_axes, x_values_sort); 
-xticklabels(freq_axes, x_labels_sort);
+if length(unique(x_values_sort)) < length(x_values)
+    %dont adjust x-axis...  repeated elements -> Zero-Crossings most likely
+else
+    xticks(freq_axes, x_values_sort); 
+    xticklabels(freq_axes, x_labels_sort);
+end
 set(freq_axes,'fontsize',7);
 %xlabel(freq_axes(1:2:end), 'Eigval IDX');
 xtickangle(freq_axes, 45)

@@ -1,4 +1,4 @@
-function [fmri_data_struct] = load_fmri(path2fmri)
+function [fmri_data_struct] = load_raw_fmri(path2fmri)
 %takes path to raw fmri file, return fmri data
 % example:
 %  <-rawdatafolder-----------><subject><tasktype><scan_dir>

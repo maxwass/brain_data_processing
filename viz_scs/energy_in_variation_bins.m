@@ -13,7 +13,7 @@ function [energy_in_bins] = energy_in_variation_bins(bins, subject_id, atlas, in
 	total_variations = total_variation(V, L);
     
     
-    [dtseries] = process_fmri(atlas, path2fmri, subject, rawdatafolder, chosen_roi);
+    [dtseries] = load_functional_dtseries(atlas, path2fmri, subject, rawdatafolder, chosen_roi);
     
     
     

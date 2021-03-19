@@ -20,10 +20,10 @@ Assumed directory structure:
 Project Layout:
 
 fmri_processing/ ==> 
-    process_fmri.m
+    load_functional_dtseries.m
         Takes raw fmri & atlas file, averages activity in atlas brain regions.
         Returns N x num_observations matrix - each column is a vector observation
-    load_fmri.m
+    load_raw_fmri.m
         Calls cifti function for reading raw fmri files.
     load_atlas.m
         Calls cifit function for reading atlas parcellizations specified by 'atlas'.

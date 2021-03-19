@@ -75,7 +75,7 @@ for i_index=1:length(subject_list)
         start = tic;
         name = 'LR';
         
-        dtseries_lr = process_fmri(atlas, path_to_LR1, subject, rawdatafolder, chosen_roi);
+        dtseries_lr = load_functional_dtseries(atlas, path_to_LR1, subject, rawdatafolder, chosen_roi);
         fc_cov_lr = cov(dtseries_lr');
         fc_corr_lr= corrcov(fc_cov_lr);
         
@@ -89,7 +89,7 @@ for i_index=1:length(subject_list)
         start = tic;
         name = 'RL';
         
-        dtseries_rl = process_fmri(atlas, path_to_RL1, subject, raw_hcp_datafolder, chosen_roi);
+        dtseries_rl = load_functional_dtseries(atlas, path_to_RL1, subject, raw_hcp_datafolder, chosen_roi);
         fc_cov_rl = cov(dtseries_rl');
         fc_corr_rl= corrcov(fc_cov_rl);
         

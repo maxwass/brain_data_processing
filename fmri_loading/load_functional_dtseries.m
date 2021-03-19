@@ -1,4 +1,4 @@
-function [dtseries] = process_fmri(atlas, path2fmri, subject, rawdatafolder, chosen_roi)
+function [dtseries] = load_functional_dtseries(atlas, path2fmri, subject, rawdatafolder, chosen_roi)
 %% inputs:
 % atlas: str in {'desikan', 'destrieux'}
 % fmri_path: str to fMRI .nii file
@@ -33,7 +33,7 @@ num_chosen_roi = length(chosen_roi.cortical) + length(chosen_roi.subcortical); %
 [segmentation_atlas] = load_atlas(atlas, subject, rawdatafolder);
     
 %% load fMRI data
-[fmri_data_struct] = load_fmri(path2fmri);
+[fmri_data_struct] = load_raw_fmri(path2fmri);
 
 %% initialize data structure dtseries ('data time series'?) for storing observations
 nTR = size(fmri_data_struct.dtseries,2); %number of observations

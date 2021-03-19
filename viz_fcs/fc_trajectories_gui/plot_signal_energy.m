@@ -14,7 +14,9 @@ function plot_signal_energy(ax, x, x_freq, intervals, interval_labels, line_colo
 
 %% compute total energy at each time point, as well as energy in each freq range
 energy          = vecnorm(x_freq,2).^2;
-energy_in_range = energy_in_freq_intervals(x_freq, intervals);
+[num_eigs, ~] = size(x);
+y = 1:length(num_eigs);
+energy_in_range = energy_in_freq_intervals(x_freq, intervals, y);
 
 
 %use these handles to add to legend. Don't want to add all data

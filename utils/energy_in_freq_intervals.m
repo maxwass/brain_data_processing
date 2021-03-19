@@ -1,9 +1,10 @@
-function [energy_contributions] = energy_in_freq_intervals(x_freq, intervals)
+function [energy_contributions] = energy_in_freq_intervals(x_freq, intervals, y)
 %find energy in the intervals (idxs of eigenvalues) given
 
 %% Inputs
 %x_freq :: [float] NxM - each column is a signal. Treated as frequency
 %           signals
+% y :: vector of values to which the intervals refer
 %intervals is a [cell] of 1x2 [int]. Assumed to be non-overlapping valid
 %   intervals. Interpreted as the indices of the eigenvalues to keep.
 
@@ -18,7 +19,10 @@ function [energy_contributions] = energy_in_freq_intervals(x_freq, intervals)
 
         %filter each signal (column) for components in this frequency
         %interval
-        x_freq_band = freq_filtering_idx(x_freq, {intervals{i}});
+        [idxs_to_keep] = ~intervals_to_logical_vec({intervals{i}}, y);
+        x_freq_band = x_freq(idxs_to_keep,:);
+        
+        %x_freq_band = freq_filtering_idx(x_freq, {intervals{i}});
         
         %compute energy in this frequency interval for each signal
         energy_contributions(i,:) = vecnorm(x_freq_band,2).^2;

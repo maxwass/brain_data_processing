@@ -60,7 +60,7 @@ for subject_idx = 1:length(subject_list)
         
     
         %% load and center 'raw' fmri data. 
-        x        = process_fmri(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi);
+        x        = load_functional_dtseries(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi);
         %x_center = x - mean(x,2);
 
         %remove subcortical if needed
