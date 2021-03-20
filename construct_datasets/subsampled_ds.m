@@ -1,4 +1,4 @@
-function fc_subsample_ds(intervals_to_keep, include_subcortical)
+function subsampled_ds(intervals_to_remove, include_subcortical)
 %% Define inputs needed for each step in pipeline
 
 %% patient and scan info
@@ -6,22 +6,25 @@ info = struct("atlas", 'desikan', "tasktype", 'rfMRI_REST1', "include_subcortica
 rng(info.rand_seed);
 
 
-%% Preprocess inputs
+%% Preprocess inputs fmri signals
 preprocess_filter.filter          = false;
 preprocess_filter.name            = 'freq_distribution';
 preprocess_filter.threshold       = 90;
 preprocess_filter.use_percentile  = true;
 preprocess_filter.splits          = 3;
 
-%% Frequency filtering inputs
+%% Frequency filtering input fmri signals
 freq_filter.filter = true;
-freq_filters.intervals_to_keep = intervals_to_keep;
+freq_filters.intervals_to_remove = intervals_to_remove;
+freq_filters.variation_metric = "total_variation"; %"zero_crossings"; %"eigenvalues";
+%{
 if info.include_subcortical
-    freq_filter.intervals_to_keep = intervals_to_keep;% {[2,29],[59,87]}; %
+    freq_filter.intervals_to_remove = intervals_to_remove;% {[2,29],[59,87]}; %
 else
-    freq_filter.intervals_to_keep = intervals_to_keep; %{[2,68]};
+    freq_filter.intervals_to_remove = intervals_to_remove; %{[2,68]};
 end
-freq_filter.intervals_txt = intervals_to_string(freq_filters.intervals_to_keep);
+%}
+freq_filter.intervals_txt = intervals_to_string(freq_filters.intervals_to_remove);
 
 
 %% Subset construction inputs
@@ -64,10 +67,9 @@ if preprocess_filter.filter
     error("not implimented");
 end
 
+freq_intervals_kept_txt = "";
 if freq_filter.filter
-    freq_intervals_kept_txt = sprintf("FreqIntervalsKept%s", freq_filter.intervals_txt);
-else
-    freq_intervals_kept_txt = sprintf("FreqIntervalsKept1-87");
+    freq_intervals_kept_txt = sprintf("%sIntervalsKept%s", freq_filter.variation_metric, freq_filter.intervals_txt);
 end
 
 if fc_filter.filter
@@ -77,12 +79,13 @@ end
 filename = sprintf("%s%s", subset_construction_txt, freq_intervals_kept_txt);
 
 %% each subset technique has own folder
+dataset_folder = "subsample_datasets_REST1";
 if isequal(subset_construction.name, "windowing")
-    filepath = fullfile("data", "cached_subset_datasets_REST1", "windowing", filename);
+    filepath = fullfile("data", dataset_folder, "windowing", filename);
 elseif isequal(subset_construction.name, "sampling")
-    filepath = fullfile("data", "cached_subset_datasets_REST1", "sampling", filename);
+    filepath = fullfile("data", dataset_folder, "sampling", filename);
 elseif isequal(subset_construction.name, "full")
-    filepath = fullfile("data", "cached_subset_datasets_REST1", "full", filename);
+    filepath = fullfile("data", dataset_folder, "full", filename);
 else
     error('Dont know where to save data to');
 end
@@ -99,7 +102,7 @@ function [data, chosen_roi] = create_dataset(preprocess_filter, freq_filter, sub
 %       fields "num_subsets" :: int, "sps" :: int, "with_replacement" :: logical
 % in {'windowing', 'sampling'}
 % freq_filter :: struct
-%   fields: filter :: logical, intervals_to_keep :: [cell] of integer
+%   fields: filter :: logical, intervals_to_remove :: [cell] of integer
 %   ranges to keep
 % preprocess_filter :: struct
 %   fields: filter, name, threshold, use_percentile, ranges
@@ -197,6 +200,20 @@ for subject_idx = 1:length(subject_list)
     if freq_filter.filter
         [GFT, evals_vec] = extract_GFT(subject, atlas, include_subcortical, GSO);
         iGFT = GFT';
+        
+        if contains(freq_filter.variation_metric, "total_variation")
+            L = diag(sum(A,2)) - A;
+            y = total_variation(iGFT, L);
+        elseif contains(freq_filter.variation_metric, "crossings")
+            A_sign = sign(A);
+            L = diag(sum(A_sign,2)) - A_sign;
+            y = (1/4) * total_variation(sign(z),L_sign);
+        elseif contains(freq_filter.variation_metric, "eigenvalues")
+            y = evals_vec;
+        else
+            error("variation metric for filter %s not recognized", freq_filter.variation_metric)
+        end
+  
     end
     
     %% extract once for both lr/rl
@@ -230,8 +247,8 @@ for subject_idx = 1:length(subject_list)
         
         %% frequency filter signals
         if freq_filter.filter
-            %[x] = iGFT*freq_filtering_idx(GFT*x, freq_filter.intervals_to_keep);
-            [idxs_to_remove] = ~intervals_to_logical_vec(freq_filter.intervals_to_keep, eigvals);
+            %[x] = iGFT*freq_filtering_idx(GFT*x, freq_filter.intervals_to_remove);
+            [idxs_to_remove] = intervals_to_logical_vec(freq_filter.intervals_to_remove, y);
             x_hat = GFT*x;
             x_hat(idxs_to_remove,:) = 0;
             x = iGFT*x_hat;
@@ -291,11 +308,7 @@ for subject_idx = 1:length(subject_list)
         if num_fcs < 1
             error('%s: filtered out ALL fcs.', subject);
         end
-        
-        
-        
-        
-        
+  
         
         %optional viz
         %corrs = apply_to_tensor_slices(@corrcov, covs);
@@ -315,26 +328,6 @@ for subject_idx = 1:length(subject_list)
     txt = sprintf('elapsed time: %.2f | ave time: %.1f | expected time remain %.2f (hrs)=== %%\n', elapsed_time, ave_patient_time, expected_time_left);
     disp(txt);
 end
-
-%{
-fcs_tensor = zeros(num_rois, num_rois, total_fcs);
-scs_tensor = zeros(num_rois, num_rois, total_fcs);
-matlab_indices_tensor = zeros(total_fcs,2, 'uint16');
-
-global_start_idx = 1;
-for l = 1:length(fcs)
-    global_end_idx = global_start_idx + fcs_per_scan{l} - 1; % may be different number of scans if filtered
-    fcs_tensor(:,:, global_start_idx:global_end_idx) = fcs{l};
-	scs_tensor(:,:, global_start_idx:global_end_idx) = repmat(scs{l},1,1,fcs_per_scan{l});
-    matlab_indices_tensor(l,:) = [global_start_idx, global_end_idx];
-    global_start_idx =  global_end_idx+1;
-    
-end
-
-python_indices_tensor = matlab_indices_tensor-1;
-
-subject_ids = subject_ids(1:num_scans); %check that num_scans correct to use
-%}
 
 end
 

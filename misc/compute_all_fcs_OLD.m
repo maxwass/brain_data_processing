@@ -3,7 +3,7 @@
 %   With help from Marty Cole, current PhD student at UofR
 
 
-%% Load raw fmri files, compute, and save cov for each patients LR and/or RL files.
+%% Load raw fmri files, compute, and save FULL cov for each patients LR and/or RL files.
 
 
 %% setup

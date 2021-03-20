@@ -92,7 +92,7 @@ construct_datasets/
         Ensure data placed into dataset tensors properly by reloading the raw .mat file and comparing
     
        
-cached_desikan/
+data/cached_desikan/
     create_cached_data.m
         Load and process fmri files with given atlas (desikan) and cache result for faster loading later.
     fix_cached_data_format.m

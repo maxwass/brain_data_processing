@@ -1,4 +1,6 @@
+% OLD
 %% zip together sc's and fc's for dataset of (sc, fc) pairs
+
 
 clear; clc;
 

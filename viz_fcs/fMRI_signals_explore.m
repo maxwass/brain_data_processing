@@ -21,8 +21,8 @@ raw_hcp_datafolder = '/Volumes/Elements/brain_data';
 % It is a directory of processed fmri signals according to the desikan atlas. 
 %One .mat file per scan (one for LR, one for RL, if they exist).
 %This directory is NOT included in repo: ~ 1GB
-cached_desikan   = '~/Documents/MATLAB/brain_data_preprocess/cached_desikan';
-cached_destrieux = '~/Documents/MATLAB/brain_data_preprocess/cached_destrieux';
+cached_desikan   = '~/Documents/MATLAB/brain_data_preprocess/data/cached_desikan';
+cached_destrieux = '~/Documents/MATLAB/brain_data_preprocess/data/cached_destrieux';
 
 
 %% determine which patients to do this for

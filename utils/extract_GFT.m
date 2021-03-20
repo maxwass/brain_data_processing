@@ -1,4 +1,4 @@
-function [GFT, evals_vec] = extract_GFT(subject,atlas, include_subcortical, GSO)
+function [GFT, evals_vec] = extract_GFT(subject, atlas, include_subcortical, GSO)
 %Construct GFT from GSO of subject's sc scan
 % subject = string subject identifier
 
