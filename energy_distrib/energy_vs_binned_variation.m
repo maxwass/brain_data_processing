@@ -7,19 +7,10 @@ include_subcortical = false;
 
 
 GSOs = ["L", "L_norm", "A", "A_norm"];
-variation_metrics = ["zero_crossings", "total_variation_L", "eigenvalues"];
-num_bins = 200;
+variation_metrics = ["total_variation_L", "zero_crossings", "eigenvalues"];
 
-% Each pair of (GSO, var_metric) also has a range for the bins
-bin_struct = struct("L", [], "L_norm", [], "A", [], "A_norm", []);
-bin_struct.L      = struct("total_variation_L", mms(0, 421), "zero_crossings", mms(0, 760), "eigenvalues", mms(0,421));
-bin_struct.L_norm = struct("total_variation_L", mms(0, 270), "zero_crossings", mms(0, 794.1), "eigenvalues", mms(0, 1.3));
-bin_struct.A      = struct("total_variation_L", mms(0, 760), "zero_crossings", mms(0, 794.1), "eigenvalues", mms(-34,204));
-bin_struct.A_norm = struct("total_variation_L", mms(0, 270), "zero_crossings", mms(0, 794), "eigenvalues", mms(-.3,1.0));
-
-
-for GSO_idx = 1:length(GSOs)
-    GSO = GSOs(GSO_idx);
+for row = 1:length(GSOs)
+    GSO = GSOs(row);
     
     for var_metric_idx = 1:length(variation_metrics)
         var_metric = variation_metrics(var_metric_idx);
@@ -44,6 +35,66 @@ for GSO_idx = 1:length(GSOs)
         %place histogram
         
     end
+end
+
+
+% Each pair of (GSO, var_metric) also has a range for the bins
+bin_struct = struct("L", [], "L_norm", [], "A", [], "A_norm", []);
+bin_struct.L      = struct("total_variation_L", mms(0, 421), "zero_crossings", mms(0, 760),   "eigenvalues", mms(0,421));
+bin_struct.L_norm = struct("total_variation_L", mms(0, 270), "zero_crossings", mms(0, 794.1), "eigenvalues", mms(0, 1.26));
+bin_struct.A      = struct("total_variation_L", mms(0, 256), "zero_crossings", mms(0, 794.1), "eigenvalues", mms(-34,204));
+bin_struct.A_norm = struct("total_variation_L", mms(0, 270), "zero_crossings", mms(0, 794),   "eigenvalues", mms(-.7,1.0));
+
+num_bins = 200;
+t = tiledlayout(length(GSOs), length(variation_metrics));
+axes_grid = gobjects(length(GSOs), length(variation_metrics));
+
+for row = 1:length(GSOs)
+    GSO = GSOs(row);
+    tilenum_start = (row-1)*length(variation_metrics);
+    axes_grid(row,:) = create_GSO_hist(tilenum_start, GSO, variation_metrics);
+    ylabel(axes_grid(row,1), GSO, 'FontSize', 25);
+end
+
+for col = 1:length(variation_metrics)
+    title(axes_grid(1,col),    variation_metrics(col), 'FontSize', 25);
+    %xlabel(axes_grid(end,col), 
+end
+
+
+function [axes_row] =  create_GSO_hist(tilenum_start, GSO, variation_metrics)
+    
+    axes_row = gobjects(length(variation_metrics),1);
+    for var_metric_idx = 1:length(variation_metrics)
+        var_metric = variation_metrics(var_metric_idx);
+        % load data for particular GSO and var metric
+        filename = strcat('GSO-', GSO, '-VariatonMetric-', var_metric, '.mat');
+        filepath = fullfile('energy_distrib/ed_data_new', filename);
+        variations_energies = load(filepath);
+        [variations, energies] = deal(variations_energies.variations, variations_energies.energies);
+        
+        % binnerize data
+        [bin_edges, bin_counts] = binnerize(variations, energies, bin_struct.(GSO).(var_metric));
+        
+        % perform plotting
+        ax = nexttile(tilenum_start+var_metric_idx);
+        histogram(ax, 'BinEdges',bin_edges,'BinCounts', bin_counts);
+        axes_row(variation_metrix) = ax;
+
+    end
+
+end
+
+function [bin_counts] = binnerize(variations, energies, bins_min_max)
+
+    bin_edges = linspace(bins_min_max.min, bins_min_max.max);
+    thing_to_count = energies(:); %need to go to 1D?
+    thing_to_bin = variations(:);
+
+    which_bins = discretize(thing_to_bin, bin_edges);
+    %B = accumarray(which_bins,data,sz,fun,fillval);
+    bin_counts = groupsummary(thing_to_count, which_bins, 'sum');
+
 end
 
 
