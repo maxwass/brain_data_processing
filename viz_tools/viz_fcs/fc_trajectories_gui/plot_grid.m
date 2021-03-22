@@ -67,8 +67,8 @@ if app.change_axes==true
 
     %% which scalar plots should we do?
     if isequal(which_scalars, "signal_freq_distrib")
-        x_mean = mean(app.dtseries(app.roi_idxs,:),2);
-        x      = app.dtseries(app.roi_idxs,:) - app.ave_node_val;%-x_mean; %show *all* signals, even those filtered out
+        %x_mean = mean(app.dtseries,2);
+        x      = app.dtseries - app.ave_node_val;%-x_mean; %show *all* signals, even those filtered out
         x_freq = app.GFT*x;
         optional.cutoff         = app.raw_filter_cutoff.Value;
         optional.raw_cutoff     = app.filter_dtseries_raw_cutoff; %convert from percentile to value in computation
