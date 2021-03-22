@@ -27,28 +27,9 @@ subject_list = fc_sc_set_file.exist_any_fc_and_sc; % (1064x1 int64)
 
 %% determine which nodes to do this for
 include_subcortical = false;
-subcortical_first = true;
-if include_subcortical==0
-    roi_idxs = (20:87); %subcortical are first. See README
-else
-	roi_idxs = (1:87);
-end
+roi_idxs = get_roi_idxs(atlas, include_subcortical);
 num_rois = length(roi_idxs);
-
-%% values to compute
-%what is the average value in *each* brain region (roi) in each scan
-%  average across rows
-%mean_rois = zeros(num_rois, num_subjects);
-
-%what is the average value of each *vector observation* in each scan
-%  average across columns
-%num_obsvs = 1200;
-%mean_obsvs = zeros(1, num_subjects * num_obsvs);
-sum_stat_file = load('data/fmri_desikan_summary_stats.mat');
-   
-average_vector_ = mean([sum_stat_file.lrs.mean_vectors, sum_stat_file.rls.mean_vectors], 2);
-average_vector  = average_vector_(roi_idxs,:);
-average_node_value = mean(average_vector);
+[ave_node_val] = average_node_value(atlas, roi_idxs);
 
 %% parameters to change for different tasks, atlas', etc
 atlas = "desikan"; %"destrieux"
@@ -67,7 +48,7 @@ elseif(strcmp(atlas,"destrieux"))
     chosen_roi         = load('data/destrieux_roi_zhengwu', 'roi').roi;
 	cached_data_folder = cached_destrieux;
 else
-	error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
+	error("Atlas %s not supported yet", atlas)
 end
 
 
@@ -77,42 +58,25 @@ end
 % save full cov (87x87) and remove subcortical later
 
 num_subjects  = length(subject_list);
-
-
-mean_freq_signal = zeros(num_rois, 3000);
-freqs = zeros(num_rois, 3000);
+mean_freq_signal = zeros(num_rois, 2*num_subjects);
+freqs            = zeros(num_rois, 2*num_subjects);
 
 counter = 0;
-num_patients_with_disc_graph = 0;
-
 for i_index = 1:length(subject_list)
     subject = char(string(subject_list(i_index)));
     fprintf('%d: subject %s\n', i_index, subject);
-    
-    
-    %subject = subject_list(i_index,:); %must be char array for [...] to work later
        
-	cached_filename_lr = [cached_data_folder,'/', tasktype, '/', subject,'_LR.mat'];
-	cached_filename_rl = [cached_data_folder,'/', tasktype, '/', subject,'_RL.mat'];
-    
-    has_cached_lr = isfile(cached_filename_lr);
-    has_cached_rl = isfile(cached_filename_rl);
-    
+    [cached_path_lr, is_cached_lr] = cached_filepath(atlas, tasktype, subject, "LR");
+    [cached_path_rl, is_cached_rl] = cached_filepath(atlas, tasktype, subject, "RL");
+
     A = extract_sc(subject, atlas, include_subcortical);
-    D_vec = sum(A,2);
-    if any(~sum(A,2))
-        d = sum(~sum(A,2));
-        warning('   subject %s has %d nodes with no edges\n', subject, d);
-        num_patients_with_disc_graph = num_patients_with_disc_graph + 1;
-        fprintf('   so far %d patients have disconnected graphs\n', num_patients_with_disc_graph);
-    end
-	[GFT, eigvals] = extract_GFT(subject, atlas, include_subcortical, GSO);
+	[GFT, eigvals, ~] = extract_GFT(subject, atlas, include_subcortical, GSO);
         
         
     % attempt load lr
     if has_cached_lr
-        dtseries_lr = load(cached_filename_lr).dtseries;
-        x_mean_lr = mean(dtseries_lr, 2) - average_node_value ; %across rows
+        dtseries_lr = load(cached_path_lr).dtseries;
+        x_mean_lr = mean(dtseries_lr, 2) - ave_node_val ; %across rows
         x_mean_lr = x_mean_lr(roi_idxs, :);
         x_mean_freq_lr = GFT*x_mean_lr;  
         counter = counter + 1;
@@ -122,8 +86,8 @@ for i_index = 1:length(subject_list)
     
     % attempt load rl
     if has_cached_rl
-        dtseries_rl = load(cached_filename_rl).dtseries;
-        x_mean_rl = mean(dtseries_rl, 2) - average_node_value ; %across rows
+        dtseries_rl = load(cached_path_rl).dtseries;
+        x_mean_rl = mean(dtseries_rl, 2) - ave_node_val ; %across rows
         x_mean_rl = x_mean_rl(roi_idxs, :);
         x_mean_freq_rl = GFT*x_mean_rl; 
 

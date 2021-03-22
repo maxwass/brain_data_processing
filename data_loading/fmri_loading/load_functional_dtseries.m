@@ -1,4 +1,4 @@
-function [dtseries] = load_functional_dtseries(atlas, path2fmri, subject, rawdatafolder, chosen_roi)
+function [dtseries] = load_functional_dtseries(subject, atlas, tasktype, scan_dir, rawdatafolder)
 %% inputs:
 % atlas: str in {'desikan', 'destrieux'}
 % fmri_path: str to fMRI .nii file
@@ -12,11 +12,13 @@ function [dtseries] = load_functional_dtseries(atlas, path2fmri, subject, rawdat
 %% outputs:
 % dtseries: num_roi x num_obvs = vector observations at each time point
 
-%% first check if we have cached this processing
-[cached, cached_filename] = is_cached(subject, atlas, chosen_roi, path2fmri);
 
-if cached
-    dtseries = load(cached_filename, 'dtseries').dtseries;
+%% check if we have cached this processing
+
+[cached_path, is_cached] = cached_filepath(atlas, tasktype, subject, scan_dir);
+
+if is_cached
+    dtseries = load(cached_path, 'dtseries').dtseries;
     return
 end
 
@@ -24,15 +26,20 @@ end
 %% constants
 ncortex = 64984;
 ntotal = 96854; %total number of voxels?
-
-
-num_chosen_roi = length(chosen_roi.cortical) + length(chosen_roi.subcortical); %68 in desikan cortical +  19 subcortical GM (gray matter) structures
-
+if contains(atlas, 'desikan', 'IgnoreCase', true)
+    num_chosen_roi = 87;
+    %num_chosen_roi = length(chosen_roi.cortical) + length(chosen_roi.subcortical); %68 in desikan cortical +  19 subcortical GM (gray matter) structures
+else
+    error('Atlas %s not supported yet', atlas);
+end
     
 %% load the subject specific label (atlas)
 [segmentation_atlas] = load_atlas(atlas, subject, rawdatafolder);
     
 %% load fMRI data
+%path2fmri = [rawdatafolder '/' subject '/' tasktype '_' scan_dir '_Atlas_hp2000_clean.dtseries.nii'];
+filename  = strcat(tasktype, '_', scan_dir, '_Atlas_hp2000_clean.dtseries.nii');
+path2fmri = fullfile(rawdatafolder,subject, filename);
 [fmri_data_struct] = load_raw_fmri(path2fmri);
 
 %% initialize data structure dtseries ('data time series'?) for storing observations

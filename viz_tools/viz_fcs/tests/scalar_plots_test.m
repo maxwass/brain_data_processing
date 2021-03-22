@@ -11,11 +11,8 @@ atlas = "desikan";
 include_subcortical = false;
 GSO = 'L';
 
-[num_rois, ~] = size(current_dtseries);
-roi_idxs = (20:num_rois);
-if include_subcortical
-    roi_idxs = 1:num_rois;
-end
+roi_idxs = get_roi_idxs(atlas, include_subcortical);
+num_rois = length(roi_idxs);
 
 %% mean center raw signals
 dtseries            = current_dtseries(roi_idxs,:);
@@ -23,7 +20,7 @@ mean_signal         = mean(dtseries,2);
 dtseries_center     = dtseries - mean_signal;
 
 %% compute frequency representation of windowed signals
-[GFT, evals] = extract_GFT(subject, atlas, include_subcortical, GSO);
+[GFT, evals, ~] = extract_GFT(subject, atlas, include_subcortical, GSO);
 signals_freq = GFT*dtseries_center;
 %% window signal
 windowsize = 20;

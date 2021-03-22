@@ -21,19 +21,9 @@ tasktype='rfMRI_REST1';
 include_subcortical = false;
 GSO = "L";
 
-if(strcmp(atlas,"desikan"))
-    chosen_roi         = load('data/desikan_roi_zhengwu', 'roi').roi;
-elseif(strcmp(atlas,"destrieux"))
-    chosen_roi         = load('data/destrieux_roi_zhengwu', 'roi').roi;h
-else
-	error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
-end
-
-if include_subcortical
-    num_rois = length(chosen_roi.cortical) + length(chosen_roi.subcortical);
-else
-    num_rois = length(chosen_roi.cortical);
-end
+roi_idxs = get_roi_idxs(atlas, include_subcortical);
+num_rois = length(roi_idxs);
+[ave_node_val] = average_node_value(atlas, roi_idxs);
 
 
 %% Define inputs needed for each step in pipeline
@@ -51,33 +41,30 @@ for subject_idx = 1:length(subject_list)
     path_to_LR1 = [raw_hcp_datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
     path_to_RL1 = [raw_hcp_datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
     
-    path2fmris = {path_to_LR1, path_to_RL1};
-    [GFT, evals_vec] = extract_GFT(subject, atlas, include_subcortical, GSO);
+     %path2fmris = {path_to_LR1, path_to_RL1};
+    [cached_path_LR, is_cached_LR] = cached_filepath(atlas, tasktype, subject, "LR");
+    [cached_path_RL, is_cached_RL] = cached_filepath(atlas, tasktype, subject, "RL");
+    
+    scans = {cached_path_LR, cached_path_RL};
+    is_cached = {is_cached_LR, is_cached_RL};
+    [GFT, evals_vec, ~] = extract_GFT(subject, atlas, include_subcortical, GSO);
     iGFT = GFT';
     
-    for path2fmris_idx = 1:length(path2fmris)
-        path2fmri = path2fmris{path2fmris_idx};
-        
+    for scan_idx = 1:length(scans)
+        path2scan = path2fmris{scan_idx};
+        if ~is_cached{scan_idx}
+            disp('what do you want to do here');
+        end
     
         %% load and center 'raw' fmri data. 
-        x        = load_functional_dtseries(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi);
-        %x_center = x - mean(x,2);
-
-        %remove subcortical if needed
-        [num_rois,~] = size(x);
-        if include_subcortical==0
-            roi_idxs = (20:num_rois); %subcortical are first. See README
+        if contains(path2scan, 'LR', 'IgnoreCase', True)
+            scan_dir = 'LR';
         else
-            roi_idxs = (1:num_rois);
+            scan_dir = 'RL';
         end
+        x   = load_functional_dtseries(subject, atlas, tasktype, scan_dir, raw_hcp_datafolder);
+        %x_center = x - mean(x,2);
         
-        average_vector_ = mean([sum_stat_file.lrs.mean_vectors, sum_stat_file.rls.mean_vectors], 2);
-        average_vector  = average_vector_(roi_idxs,:);
-        average_node_value = mean(average_vector);
-        
-        
-        
- 
         f = figure();
         t = tiledlayout('flow');
         axes_list = gobjects(6,1);
@@ -88,7 +75,7 @@ for subject_idx = 1:length(subject_list)
         title('raw corr');
         
         axes_list(2) = nexttile();
-        all_scalar_center = x(roi_idxs,:) - average_node_value;
+        all_scalar_center = x(roi_idxs,:) - ave_node_val;
         global_scalar_center_fc = corr(all_scalar_center');
         imagesc(global_scalar_center_fc);
         title('AA GLOBAL Scalar : subtract ave *node* val over ALL mean vectors for ALL subject');
@@ -129,12 +116,6 @@ for subject_idx = 1:length(subject_list)
         local_scalar_center_fc_same  = all(all( abs(raw_fc-local_scalar_center_fc) <.001));
         global_scalar_center_fc_same = all(all( abs(raw_fc-global_scalar_center_fc)<.001));
         fc_remove_fc_same = all(all(abs(raw_fc - dc_remove_fc)<.001));
-        
-        
-        
-        
-
-
         
     end
 end

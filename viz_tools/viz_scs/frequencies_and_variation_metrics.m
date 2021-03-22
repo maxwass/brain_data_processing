@@ -17,15 +17,14 @@ for idx = 1:length(subject_list)
         s = struct('eigenvals', [], 'total_variations', [], 'zero_crossings', []);
         
         GSO = GSOs(gso_idx);
-        [GFT, s.eigenvals] = extract_GFT(subject_id, atlas, include_subcortical, GSO);
+        [GFT, s.eigenvals, S] = extract_GFT(subject_id, atlas, include_subcortical, GSO);
         A = extract_sc(subject_id, atlas, include_subcortical);
-        S = which_GSO(GSO, A);
 
         %% interpretation of freq components: zero crossings and total variation
         V = GFT';
         L_sign = diag(sum(sign(A),2))-sign(A);
         % ith position is # 0-crossings of ith freq component
-        s.zero_crossings = (1/4)*total_variation(sign(V), L_sign);
+        s.zero_crossings = zero_crossings(V, A);
 
         L = diag(sum(A,2)) - A;
         s.total_variations = total_variation(V, L);
@@ -45,20 +44,6 @@ end
 
 
 %% Misc funcs
-function S = which_GSO(GSO, A)
-    [A_norm, L, L_norm] = compute_GSOs(A);
-    if isequal(GSO, 'A')
-        S = A;
-    elseif isequal(GSO, 'A_norm')
-        S = A_norm;
-    elseif isequal(GSO, 'L')
-        S = L;
-    elseif isequal(GSO, 'L_norm')
-        S = L_norm;
-    else
-        error('unrecognized GSO')
-    end
-end
 
 function preview_freq_plot(GSO, eigvals, zero_crossings, total_variation)
     figure;

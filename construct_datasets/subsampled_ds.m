@@ -128,23 +128,19 @@ raw_hcp_datafolder = '/Volumes/Elements/brain_data';
     deal(info.atlas, info.tasktype, info.include_subcortical, info.GSO);
 
 %% which rois to consider
+%{
 if(strcmp(atlas,"desikan"))
     chosen_roi         = load('data/desikan_roi_zhengwu', 'roi').roi;
     sum_stat_file      = load('data/fmri_desikan_summary_stats.mat');
 elseif(strcmp(atlas,"destrieux"))
     chosen_roi         = load('data/destrieux_roi_zhengwu', 'roi').roi;
-    error("Atlas " + atlas + " has not been implimented yet...")
-    elsea
-	error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
-end
-
-if include_subcortical
-    num_rois = length(chosen_roi.cortical) + length(chosen_roi.subcortical);
-    roi_idxs = (1:num_rois);
 else
-    num_rois = length(chosen_roi.cortical);
-    roi_idxs = (20:num_rois);
+    error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
 end
+%}
+
+roi_idxs = get_roi_idxs(atlas, include_subcortical);
+num_rois = length(roi_idxs);
 
 if preprocess_filter.filter
     preprocess_filter.ranges = construct_freq_ranges(num_rois, preprocess_filter.splits);
@@ -152,10 +148,7 @@ end
 
 
 %% Mean center: compute scalar s to subtract from all signals for mean centering: x-s*1's
-average_vector_ = mean([sum_stat_file.lrs.mean_vectors, sum_stat_file.rls.mean_vectors], 2);
-average_vector  = average_vector_(roi_idxs,:);
-average_node_value = mean(average_vector); %use this to mean center!
-
+[ave_node_val] = average_node_value(atlas, roi_idxs);
 
 %% determine which patients to do this for
 fc_sc_set_file = load('fc_and_sc_sets.mat');
@@ -178,27 +171,26 @@ total_fcs = 0;
 for subject_idx = 1:length(subject_list)
     subject_int = subject_list(subject_idx,:);
     subject     = char(num2str(subject_list(subject_idx,:)));
-    path_to_LR1 = [raw_hcp_datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
-    path_to_RL1 = [raw_hcp_datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
     
     %path2fmris = {path_to_LR1, path_to_RL1};
-    [cached_LR, ~] = is_cached(subject, atlas, chosen_roi, path_to_LR1);
-    [cached_RL, ~] = is_cached(subject, atlas, chosen_roi, path_to_RL1);
-    path2fmris = {};
-    if ~cached_LR && ~cached_RL %if neither have, go to next
+    [cached_path_LR, is_cached_LR] = cached_filepath(atlas, tasktype, subject, "LR");
+    [cached_path_RL, is_cached_RL] = cached_filepath(atlas, tasktype, subject, "RL");
+    
+    scans = {};
+    if ~is_cached_LR && ~is_cached_RL %if neither have, go to next
         continue
     end
-    if cached_LR
-        path2fmris{end+1} = path_to_LR1;
+    if is_cached_LR
+        scans{end+1} = cached_path_LR;
     end
-    if cached_RL
-        path2fmris{end+1} = path_to_RL1;
+    if is_cached_RL
+        scans{end+1} = cached_path_RL;
     end
    
     % if performing freq filtering, extract once for all scans (all share
     % same sc)
     if freq_filter.filter
-        [GFT, evals_vec] = extract_GFT(subject, atlas, include_subcortical, GSO);
+        [GFT, evals_vec, ~] = extract_GFT(subject, atlas, include_subcortical, GSO);
         iGFT = GFT';
         
         if contains(freq_filter.variation_metric, "total_variation")
@@ -225,19 +217,21 @@ for subject_idx = 1:length(subject_list)
     data(subject_idx).sc = A;
     
     start = tic();
-    fprintf('starting %d/%d: (%d scans)...', subject_idx, length(subject_list), length(path2fmris));
+    fprintf('starting %d/%d: (%d scans)...', subject_idx, length(subject_list), length(scans));
     
-    for path2fmris_idx = 1:length(path2fmris)
-        path2fmri = path2fmris{path2fmris_idx};
+    for scan_idx = 1:length(scans)
+        path2scan = scans{scan_idx};
         
     
-        %% load and center 'raw' fmri data. 
-        x        = load_functional_dtseries(atlas, path2fmri, subject, raw_hcp_datafolder, chosen_roi);
-        x        = x - average_node_value; %
-
-        if ~include_subcortical
-            x = x(20:end, :);
+        %% load and center 'raw' fmri data
+        if contains(path2scan, 'LR', 'IgnoreCase', True)
+            scan_dir = 'LR';
+        else
+            scan_dir = 'RL';
         end
+        x  = load_functional_dtseries(subject, atlas, tasktype, scan_dir, raw_hcp_datafolder);
+        x  = x - ave_node_val; %
+        x = x(roi_idxs, :); %removing subcortical
 
         %% perform pre-preprocessing of 'raw' signals. This removes some subset of raw signals.
         if preprocess_filter.filter
@@ -288,10 +282,10 @@ for subject_idx = 1:length(subject_list)
         end
         
         %populate covs portion of struct
-        if contains(path2fmri, 'LR')       
+        if contains(path2scan, 'LR')       
             data(subject_idx).contains_lr = true;
             data(subject_idx).lr_fcs = covs;
-        elseif contains(path2fmri, 'RL')
+        elseif contains(path2scan, 'RL')
             data(subject_idx).contains_rl = true;
             data(subject_idx).rl_fcs = covs;
         else

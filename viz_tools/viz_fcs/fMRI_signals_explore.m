@@ -173,7 +173,7 @@ end
 
 function plot_mean_vec_freq(ax, mean_vec_lr, mean_vec_rl, subject, atlas, include_subcortical, GSO)
     
-    [GFT, evals] = extract_GFT(subject, atlas, include_subcortical, GSO);
+    [GFT, evals, ~] = extract_GFT(subject, atlas, include_subcortical, GSO);
     
     mean_vec_freq_lr = GFT*mean_vec_lr;
     mean_vec_freq_rl = GFT*mean_vec_rl;

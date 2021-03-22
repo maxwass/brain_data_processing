@@ -52,9 +52,7 @@ for p = 1:num_patients_plot
     %% find eigevals (x) and freq_mean (y)
     patient_data = data(patient_idxs(p));
     [A] = extract_sc(patient_data.subject_id, atlas, include_subcortical);
-    [GFT, eigvals] = extract_GFT(patient_data.subject_id, atlas, include_subcortical, GSO);
-    S = which_GSO(GSO, A);
-    
+    [GFT, eigvals, S] = extract_GFT(patient_data.subject_id, atlas, include_subcortical, GSO);
     % this is the mean signal in the GFT domain from random signals
     freq_mean = mean(GFT*random_signals,2);
     
@@ -66,11 +64,8 @@ for p = 1:num_patients_plot
     %% interpretation of freq components: zero crossings and total variation
     zcs = zeros(length(GFT),1); % ith position is # 0-crossings of ith freq component
     V = GFT';
-    for l = 1:length(GFT)
-        eig_vec = V(:,l);
-        zcs(l) = zero_crossings(eig_vec, A, 'total_variation');
-    end
     L = diag(sum(A,2)) - A;
+    zcs = zero_crossings(V, A);
     tvs = total_variation(V, L);
     
     % tv/zcs vs eigenvals
@@ -155,20 +150,6 @@ end
 
 
 %% Misc funcs
-function S = which_GSO(GSO, A)
-    [A_norm, L, L_norm] = compute_GSOs(A);
-    if isequal(GSO, 'A')
-        S = A;
-    elseif isequal(GSO, 'A_norm')
-        S = A_norm;
-    elseif isequal(GSO, 'L')
-        S = L;
-    elseif isequal(GSO, 'L_norm')
-        S = L_norm;
-    else
-        error('unrecognized GSO')
-    end
-end
 
 function H = matrix_polynomial(coeffs, S)
     [m, n] = size(S);

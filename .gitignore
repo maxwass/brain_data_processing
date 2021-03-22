@@ -8,5 +8,8 @@ example_brain_data/
 .DS_Store
 Correlation_Calculation/CalculateFunctionConnectivity_MMP.m~
 *~
+*[0-9].mat
+*LR.mat
+*RL.mat
 plots/
 todo.txt

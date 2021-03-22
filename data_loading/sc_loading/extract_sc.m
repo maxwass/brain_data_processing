@@ -32,6 +32,12 @@ end
 
 %% find index of subject in tensor
 idx = find(scs_file.subject_list==subject);
+
+if isempty(idx)
+    throw(MException('Loading:DoesNotExist:SC', num2str(subject)));
+end
+
+
 A_full_raw = scs_file.scs(:,:, idx);
 A_full_transform = log(A_full_raw+A_full_raw' +1); %transform reccomended by Zhengwu
 

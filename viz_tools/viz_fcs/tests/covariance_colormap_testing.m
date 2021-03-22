@@ -5,9 +5,8 @@ path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
 addpath(genpath(path2repo));
 load("misc/correlations_colormap.mat");
 load('dtseries_testing.mat','current_dtseries');
-[num_rois, ~] = size(current_dtseries);
-roi_idxs = (20:num_rois);
-
+roi_idxs = get_roi_idxs(atlas, include_subcortical);
+num_rois = length(roi_idxs);
 
 current_dtseries;
 dtseries = current_dtseries(roi_idxs,:);

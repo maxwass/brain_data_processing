@@ -1,4 +1,7 @@
 function [tvs_bin_summary, zcs_bin_summary] = binned_variation_statistics(bins, GSO)
+%% 1) Collect tvs and zcs of freq componenets of all SCs (in GSO form)
+%  2) Split these into respective bins
+%  3) Compute statistics (min/max/median/ave of tvs/zcs in each bin
 
 
 scs_file = load('scs_desikan.mat');
