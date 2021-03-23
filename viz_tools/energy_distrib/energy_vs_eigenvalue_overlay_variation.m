@@ -1,5 +1,5 @@
-%% plot energy distribution
-
+%% Plot energy in bin of eigenvalues. Overlay range of some variation 
+%   metric inside this interval.
 close; clear;
 
 bin_width = .05;
@@ -112,5 +112,92 @@ function ax = plot_histogram(GSO, include_subcortical, num_bins, remove_first)
     text(ax, .02, .88, GSO, 'Units', "Normalized", 'FontSize',25);
   
 end
+
+function [energy_in_bin] = binned_energy_in_freq_intervals(bins, freqs, mean_freq_signal)
+%freqs :: columns are eigenvalues
+% mean_freq_signal :: columns are freq components of mean signals
+% bin_width :: float dictating how large the intervals should be
+
+    num_bins = length(bins)-1;
+    energy_in_bin = zeros(num_bins,1);
+
+    for l = 1:num_bins
+        low  = bins(l);
+        high = bins(l+1);
+    
+        % find energy within this bin (e.g. freq range)
+        idxs_in_bin  = (low<=freqs) & (freqs<high);
+        energy_in_bin(l) = sum(mean_freq_signal(idxs_in_bin).^2, 'all');
+    end  
+
+end
+
+
+function [tvs_bin_summary, zcs_bin_summary] = binned_variation_statistics(bins, GSO)
+%% 1) Collect tvs and zcs of freq componenets of all SCs (in GSO form)
+%  2) Split these into respective bins
+%  3) Compute statistics (min/max/median/ave of tvs/zcs in each bin
+
+
+scs_file = load('scs_desikan.mat');
+subject_list = scs_file.subject_list;
+num_bins = length(bins)-1;
+
+all_tvs = cell(num_bins,1);
+all_zcs = cell(num_bins,1);
+
+for idx = 1:length(subject_list)
+    subject_id = subject_list(idx);
+    filename = sprintf("%d.mat", subject_id);
+    filepath = fullfile("viz_scs", "scs_spectral_info", filename);
+    gso_struct = load(filepath).gso_struct;
+    s = gso_struct.(GSO);
+    [eigvals, tvs, zcs] = deal(s.eigenvals, s.total_variations, s.zero_crossings);
+   
+    
+    for bin_idx = 1:num_bins
+        [low, high] = deal(bins(bin_idx), bins(bin_idx+1));
+        evals_idxs = (low <= eigvals) & (eigvals < high);
+        
+        all_tvs{bin_idx} = [all_tvs{bin_idx}, tvs(evals_idxs)'];
+        all_zcs{bin_idx} = [all_zcs{bin_idx}, zcs(evals_idxs)'];
+    end
+    
+    
+end
+
+% take mean/meadian/min/max of tvs of each bin
+tvs_bin_summary.medians = cellfun(@median, all_tvs);
+tvs_bin_summary.means = cellfun(@mean, all_tvs);
+tvs_bin_summary.stds = cellfun(@std, all_tvs);
+tvs_bin_summary.mins = min_max_cellfun(@min, all_tvs);
+tvs_bin_summary.maxs = min_max_cellfun(@max, all_tvs);
+
+
+zcs_bin_summary.medians = cellfun(@median, all_zcs);
+zcs_bin_summary.means = cellfun(@mean, all_zcs);
+tvs_bin_summary.stds = cellfun(@std, all_zcs);
+zcs_bin_summary.mins = min_max_cellfun(@min, all_zcs);
+zcs_bin_summary.maxs = min_max_cellfun(@max, all_zcs);
+
+
+end
+
+function out = min_max_cellfun(anon_f, cell_arr)
+
+    out = zeros(1,length(cell_arr));
+    for l = 1:length(cell_arr)
+        o = anon_f(cell_arr{l});
+        if isempty(o)
+            out(l) = nan;
+        else  
+            out(l) = o;
+        end
+        
+    end
+    
+end
+
+
 
 

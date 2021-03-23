@@ -1,4 +1,6 @@
 %% Explore and Viz Brain Data
+% progressively increase edge threshold and see viz sparser graph
+
 clear all; close all;
 N_full = 87; N_sub = 68;
 % loads 6 matrices: 

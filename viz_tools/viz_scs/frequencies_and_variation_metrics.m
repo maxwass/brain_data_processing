@@ -1,5 +1,8 @@
-%% for each SC, compute the eigenvalues and corresponding 
+%% For each SC, compute the eigenvalues and corresponding 
 %  Zero-Crossings/Total Variations for each frequency.
+%  NOT considering fMRI signal.
+
+%% TO DO: REWRITE IN SAME STYLE AS energy_vs_binned_variation.m
 clear; close;
 
 atlas = 'desikan';
