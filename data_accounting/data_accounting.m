@@ -1,9 +1,6 @@
 %% Accounting on which files we have (or need) for which patients
 clear; clc;
 
-path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
-addpath(genpath(path2repo)); %recursively adds all repo files/folders
-
 %% SCS. Given by Zhengwu -> Yang -> Max.
 % all_id (1065x1 double)
 % loaded_tensor_sub (4-D double)
@@ -34,7 +31,7 @@ missing_fcs_ids   = subject_list_sc(missing_fcs_index);
 %% new FCs (downloaded from HCP_1200 server and did local computation)
 % variables in 'hcp_1200_subject_list.mat'
 %  hcp1200_subject_list (1113x1 double)
-load data/hcp_1200_subject_list.mat %subject list (patient ids)
+load data_accounting/hcp_1200_subject_list.mat %subject list (patient ids)
 subject_list_hcp1200 = int64(double(string(hcp1200_subject_list)));
 clear('hcp1200_subject_list')
 
@@ -47,7 +44,7 @@ sc_subset_hcp = all(ismember(subject_list_sc, subject_list_hcp1200)); %True
 %  missing_RL (1x19 couble)
 %  missing_LR_and_RL (1x17 double)
 %  type -  (char array) which fmri files {'msmall', 'no_msmall'}
-load('data/subjects_missing_fc_data.mat')
+load('data_accounting/subjects_missing_fc_data.mat')
 
 
 %% Creating non-intersecting sets:

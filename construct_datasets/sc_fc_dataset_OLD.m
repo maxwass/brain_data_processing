@@ -21,7 +21,7 @@ subject_list_sc = sc_file.subject_list;
 
 % new FCs (downloaded from HCP_1200 server and did local computation)
 % hcp1200_subject_list (1x1113 double): 
-load('data/hcp_1200_subject_list.mat'); %subjList
+load('data_accounting/hcp_1200_subject_list.mat'); %subjList
 subject_list_hcp1200 = int64(double(string(hcp1200_subject_list))); % (1113x1 double)
 clear('hcp1200_subject_list')
 

@@ -1,6 +1,6 @@
 %% Energy vs Binned Variations (TV/ZCs/Eigvals)
 clear;close;
-subject_list = str2num(load('data/hcp_1200_subject_list.mat').hcp1200_subject_list); % 1113x1 int array
+subject_list = str2num(load('data_accounting/hcp_1200_subject_list.mat').hcp1200_subject_list); % 1113x1 int array
 atlas = 'desikan';
 task = "REST1";
 include_subcortical = false;

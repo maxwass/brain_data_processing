@@ -36,14 +36,14 @@ plots_dir   = '~/Documents/MATLAB/brain_data_preprocess/plots/fc_trajs';
 subcortical_first = true;
 
 %load subject list (list of strings of subject ids)
-%load('data/hcp_1200_subject_list.mat')
+%load('data_accounting/hcp_1200_subject_list.mat')
 
 %Where to save matlab outputs. We save one .mat file per patient.
 plots_dir   = '~/Documents/MATLAB/brain_data_preprocess/plots/fc_trajs';
 subcortical_first = true;
 
 %load subject list (list of strings of subject ids)
-%load('data/hcp_1200_subject_list.mat')
+%load('data_accounting/hcp_1200_subject_list.mat')
 %subject_list = hcp1200_subject_list; %loaded from hcp_1200_subject_list.mat
 brain_dataset = load('data/brain_dataset_sc_fc_pairs.mat');
 subject_list = int2str(brain_dataset.final_subject_list); %all subjects with scs

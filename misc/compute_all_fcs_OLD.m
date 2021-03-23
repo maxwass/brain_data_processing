@@ -28,7 +28,7 @@ destrieux_write_folder = '~/Desktop/geom_dl/data/brain_data/fcs_destrieux';
 
 
 %load subject list (list of strings of subject ids)
-load('data/hcp_1200_subject_list.mat')
+load('data_accounting/hcp_1200_subject_list.mat')
 subject_list = hcp1200_subject_list; %loaded from hcp_1200_subject_list.mat
 
 

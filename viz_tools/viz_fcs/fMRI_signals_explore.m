@@ -28,7 +28,7 @@ cached_destrieux = '~/Documents/MATLAB/brain_data_preprocess/data/cached_destrie
 %% determine which patients to do this for
 % new FCs (downloaded from HCP_1200 server and did local computation)
 % hcp1200_subject_list (1x1113 double): 
-%load('data/hcp_1200_subject_list.mat');
+%load('data_accounting/hcp_1200_subject_list.mat');
 fc_sc_set_file = load('fc_and_sc_sets.mat');
 subject_list = fc_sc_set_file.exist_any_fc_and_sc; % (1064x1 int64)
 
