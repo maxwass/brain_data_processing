@@ -1,3 +1,7 @@
+# provided by Zhengwu to Yang. Seems subcortical FCs and SCs are NOT labeled consistently.
+# Personal research shows this mapping from id to label_name is consistent with some FreeSurfer standard below
+# https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/AnatomicalROI/FreeSurferColorLUT
+
 #subcortical regions （18）
 
 4 LH_Lateral-Ventricle

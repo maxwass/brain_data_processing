@@ -1,3 +1,5 @@
+# provided by Zhengwu to Yang. Seems subcortical FCs and SCs are NOT labeled consistently.
+
 
 
     'ACCUMBENS_LEFT'

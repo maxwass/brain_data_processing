@@ -50,7 +50,17 @@ path2fmri = char(fullfile(rawdatafolder,subject, filename));
 [fmri_data_struct] = load_raw_fmri(path2fmri);
 
 %% constants
-ncortex = 64984; % length(segmenation_atlas);
+% https://mandymejia.com/2015/08/10/a-laymans-guide-to-working-with-cifti-files/
+% The total number of voxels in a CIFTI file is ~ 90,000
+% ~60,000 surface voxels (about 30,000 per hemisphere)
+% ~30,000 subcortical and cerebellar voxels
+% fmri_data_struct
+%brainstructure: a vector of length V with a numerical indicator (1-21) for the major brain structure that each voxel forms part of
+%brainstructurelabel: a vector of length 21 with the name of each major brain structure (e.g. CORTEX_LEFT, CORTEX_RIGHT, CAUDATE_LEFT, CAUDATE_RIGHT, CEREBELLUM_LEFT, CEREBELLUM_RIGHT, etc.)
+%pos: a Vx3 matrix of the x-y-z coordinates of each voxel.  However, only the subcortical and cerebellar voxels have coordinates specified; for surface voxels, the values are missing.
+%A time series (*.dtseries.nii) CIFTI file contains time (1xT) and dtseries (VxT), where time is the timing (in seconds) of each time point (0, 0.72, 1.44, …) and dtseries is the time series of each voxel.
+
+ncortex = 64984; % length(segmenation_atlas); 
 ntotal = 96854;  %  length(fmri_data_struct.brainstructure)   total number of voxels?
 
 %% initialize data structure dtseries ('data time series'?) for storing observations
