@@ -23,12 +23,19 @@ if is_cached
 end
 
 
-%% constants
-ncortex = 64984;
-ntotal = 96854; %total number of voxels?
+%saved as rfMRI_REST* vs REST*
+if ~contains(tasktype,'rfMRI_')
+    tasktype=strcat("rfMRI_", tasktype);
+end
+if isnumeric(subject)
+    subject = num2str(subject);
+end
+
+%% which ROI's are we analyzing? and with which atlas?
 if contains(atlas, 'desikan', 'IgnoreCase', true)
-    num_chosen_roi = 87;
-    %num_chosen_roi = length(chosen_roi.cortical) + length(chosen_roi.subcortical); %68 in desikan cortical +  19 subcortical GM (gray matter) structures
+    chosen_roi = load('data/desikan_roi_zhengwu.mat').roi;
+    %num_chosen_roi = 87;
+    num_chosen_roi = length(chosen_roi.cortical) + length(chosen_roi.subcortical); %68 in desikan cortical +  19 subcortical GM (gray matter) structures
 else
     error('Atlas %s not supported yet', atlas);
 end
@@ -39,8 +46,12 @@ end
 %% load fMRI data
 %path2fmri = [rawdatafolder '/' subject '/' tasktype '_' scan_dir '_Atlas_hp2000_clean.dtseries.nii'];
 filename  = strcat(tasktype, '_', scan_dir, '_Atlas_hp2000_clean.dtseries.nii');
-path2fmri = fullfile(rawdatafolder,subject, filename);
+path2fmri = char(fullfile(rawdatafolder,subject, filename));
 [fmri_data_struct] = load_raw_fmri(path2fmri);
+
+%% constants
+ncortex = 64984; % length(segmenation_atlas);
+ntotal = 96854;  %  length(fmri_data_struct.brainstructure)   total number of voxels?
 
 %% initialize data structure dtseries ('data time series'?) for storing observations
 nTR = size(fmri_data_struct.dtseries,2); %number of observations
@@ -54,12 +65,14 @@ total_ROIs = length(chosen_roi.subcortical) + length(chosen_roi.cortical);
 startprocess = tic;
 for roi_index = 1:total_ROIs
     
-    if roi_index <= 19 %subcortical
+    %subcortical
+    if roi_index <= 19
         roi = chosen_roi.subcortical(roi_index);
         
         %create mask for brain region r
         indices = logical(fmri_data_struct.brainstructure==roi);
     
+    %cortical
     elseif (20 <= roi_index) && (roi_index <= 87) %cortical
         %roi_index should be 1 when we first enter this loop -> subtract
         %off previous increments from above subcortical case.

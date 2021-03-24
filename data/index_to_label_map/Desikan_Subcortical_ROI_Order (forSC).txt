@@ -1,0 +1,25 @@
+#subcortical regions （18）
+
+4 LH_Lateral-Ventricle
+8 LH_Cerebellum-Cortex
+10 LH_Thalamus-Proper
+11 LH_Caudate
+12 LH_Putamen
+13 LH_Pallidum
+17 LH_Hippocampus
+18 LH_Amygdala
+26 LH_Accumbens
+    
+43 RH_Lateral-Ventricle
+47 RH_Cerebellum-Cortex
+49 RH_Thalamus-Proper
+50 RH_Caudate
+51 RH_Putamen
+52 RH_Pallidum
+53 RH_Hippocampus
+54 RH_Amygdala
+58 RH_Accumbens
+
+#brain stem (1)
+
+99 _Brain-Stem

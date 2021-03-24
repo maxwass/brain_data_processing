@@ -1,10 +1,6 @@
 clear
 close all
 
-%move to matlab folder, currently in geom_dl folder
-path2repo = '~/Documents/MATLAB/brain_data_preprocess'; %CHANGE THIS
-addpath(genpath(path2repo)); %recursively adds all repo files/folders
-
 atlas = char('desikan');
 tasktype = char('rfMRI_REST1');
 subcortical_first_fc = false;
