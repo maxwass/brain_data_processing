@@ -20,7 +20,7 @@ for row = 1:length(GSOs)
     for var_metric_idx = 1:length(variation_metrics)
         var_metric = variation_metrics(var_metric_idx);
         filename = strcat('GSO-', GSO, '-VariatonMetric-', var_metric, '.mat');
-        filepath = fullfile('energy_distrib/ed_data_new', filename);
+        filepath = fullfile('viz_tools/energy_distrib/ed_data_new', filename);
         if isfile(filepath)
             variations_energies = load(filepath);
             [variations, energies] = deal(variations_energies.variations, variations_energies.energies);
@@ -78,7 +78,7 @@ function [axes_row] =  create_GSO_hist(tilenum_start, GSO, variation_metrics, bi
         var_metric = variation_metrics(var_metric_idx);
         % load data for particular GSO and var metric
         filename = strcat('GSO-', GSO, '-VariatonMetric-', var_metric, '.mat');
-        filepath = fullfile('energy_distrib/ed_data_new', filename);
+        filepath = fullfile('viz_tools/energy_distrib/ed_data_new', filename);
         variations_energies = load(filepath);
         [variations, energies] = deal(variations_energies.variations, variations_energies.energies);
         

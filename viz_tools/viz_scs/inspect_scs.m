@@ -10,7 +10,8 @@ SCs_upper_tri = sc_file.scs;
 subject_list_sc = sc_file.subject_list;
 
 SCs = apply_to_tensor_slices(@(x) (x+x'), SCs_upper_tri);
-cortical_SCs = SCs(20:end,20:end,:);
+cortical_idxs = get_roi_idxs(atlas, include_subcortical);
+cortical_SCs = SCs(cortical_idxs,cortical_idxs,:);
 SCs_transform = apply_to_tensor_slices(@(x) log(x+x'+1), SCs_upper_tri);
 
 
