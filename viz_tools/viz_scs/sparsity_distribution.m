@@ -22,7 +22,7 @@ ylabel('Pr(s < sparsity)', 'FontSize', 20);
 xlabel('s', 'FontSize', 20);
 stats_text = sprintf("min: %.2f \nmax: %.2f \nmean: %.2f \nmedian: %.2f \nstd: %.2f", stats.min, stats.max, stats.mean, stats.median, stats.std);
 text(.2, .6, stats_text, 'Units','normalized', 'FontSize',25);
-
+sparsities  = compute_sparsities(scs_upper_tri, 0);
 if ~include_subcortical
     txt = 'w/ only Cortical Nodes';
 else
