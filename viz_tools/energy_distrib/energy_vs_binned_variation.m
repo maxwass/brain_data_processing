@@ -143,8 +143,10 @@ function [variations, energies] = f(subject_list, atlas, task, include_subcortic
             scan_direction = scan_directions(scan_dir_idx);
             scan_info = ScanInfo(subject_list(idx), atlas, task, scan_direction, include_subcortical);
             try 
-                [variations(:, idx), energies(:, idx)] = compute_variations_energies(scan_info, variation_metric, GSO, ave_node_val);
+                [vars, es] = compute_variations_energies(scan_info, variation_metric, GSO, ave_node_val);
                 total_scans_processed = total_scans_processed + 1;
+                [variations(:, total_scans_processed), energies(:, total_scans_processed)] = deal(vars, es);
+                
             catch ME
                 if ~contains(ME.identifier,'DoesNotExist')
                     rethrow(ME);

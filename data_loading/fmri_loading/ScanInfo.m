@@ -44,6 +44,9 @@ classdef ScanInfo
         function [roi_idxs] = get_roi_idxs(obj)
             roi_idxs = get_roi_idxs(obj.atlas, obj.include_subcortical);
         end
+        function [fc] = compute_fc(obj)
+            fc = cov(obj.load_functional_dtseries()');
+        end
         function [is_eq] = eq(obj, other)
             is_eq = ...
                 isequal(obj.subject_id, other.subject_id) && ...
