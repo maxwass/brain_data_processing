@@ -11,6 +11,7 @@ else
     which_nodes = "Cortical+Sub-Cortical";
 end
 
+%% Real FCs
 %[fcs, subject_ids, scan_dirs] = f(subject_list, atlas, task, include_subcortical);
 %save('viz_tools/viz_fcs/fc_metric_distrib_data/fc_metrics.mat', 'fcs', 'subject_ids', 'scan_dirs');
 load('viz_tools/viz_fcs/fc_metric_distrib_data/fc_metrics.mat');
@@ -19,38 +20,48 @@ fcs_tensor = zeros(N, N, length(fcs));
 for idx = 1:length(fcs)
     fcs_tensor(:, :, idx) = fcs{idx};
 end
+[frob, max_svs, max_abs_val] = compute_fc_metrics(fcs_tensor);
+[real_ms.name, real_ms.frobs, real_ms.max_svs, real_ms.max_abs_vals] = ...
+    deal('Real', frob, max_svs, max_abs_val);
 
-%fcs = cellfun(@corrcov, fcs, 'UniformOutput', false);
 
-frob = apply_to_tensor_slices(@(x) norm(x,'fro'), fcs_tensor);
-max_sv = apply_to_tensor_slices(@(x) norm(x), fcs_tensor);
-max_abs_val = apply_to_tensor_slices(@(x) max(abs(x), [], 'all'), fcs_tensor);
-max_val = apply_to_tensor_slices(@(x) max(x, [], 'all'), fcs_tensor);
-min_val = apply_to_tensor_slices(@(x) min(x, [], 'all'), fcs_tensor);
+%% PS FCs
+scs_upper_tri = load_processed_scs(atlas, include_subcortical, 'log');
+scs = apply_to_tensor_slices(@(x) x+x', scs_upper_tri);
+c1 = [.5, .5, .2];
+c2 = [.01, .2, -.1];
+c3 = [.49, .0163, -1.3061e-04]; %mid pass
+coeffs_list = {c1, c2, c3};
 
-vals = {frob, max_abs_val};%, max_sv, max_val, min_val};
-names = ["Frob Norm", "Max Abs Value Entrywise"];%, "Max Singular Value", "Max Value Entrywise", "Min Abs Value Entrywise"];
+[metrics_list, fields, names] = compute_all_ps_metrics(coeffs_list, scs);
 
-%{
+%% add on Real fcs to end
+metrics_list{end+1} = real_ms;
+
+%% Plot on same axis on log scale
 fig = figure();
-t = tiledlayout(length(vals),1);
-title(t, 'Distributions of FC metrics. Desikan w/ only Cortical Nodes.', 'FontSize', 30);
-for idx = 1:length(vals)
-    ax = nexttile();
-    x = vals{idx};
-    name = names(idx);
-    histogram(ax, x);
-    hold on;
-    place_summary_points(ax, x)
-    yyaxis right;
-    [~, stats] = cdfplot(x);
-    %txt = sprintf("%s. Max %.2f, Min %.2f, Mean %.2f, Median %.2f", ...
-    %    name, max(x), min(x), mean(x), median(x));
-    
-    title(name, 'FontSize', 25);
-end
-%}
+t = tiledlayout(1, length(fields));
+title(t, 'Distributions of FC metrics. Real & PS (H^2). Desikan w/ only Cortical Nodes.', 'FontSize', 30);
+field_axes = gobjects(length(fields),1);
 
+for field_idx = 1:length(fields)
+    ax = nexttile();
+    hold on;
+    for m_idx = 1:length(metrics_list)
+        metrics = metrics_list{m_idx};
+        x = log10(metrics.(fields(field_idx)));
+        histogram(ax, x, 'DisplayName', metrics.name);
+    end
+    legend;
+    field_axes(field_idx) = ax;
+    xlabel(ax, 'Log 10 Scale', 'FontSize', 25);
+    title(names(field_idx), 'FontSize', 25);
+    hold off;
+end
+ylabel(field_axes(1), 'Counts', 'FontSize', 25);
+
+%% Plots for FCs ordered according to some metric
+%{
 name = names(2);
 val = vals{2};
 
@@ -78,7 +89,48 @@ ylabel(axes_list(1), 'Median', 'FontSize', fs);
 % high
 axes_list = place_fcs(t, fcs, sorted_vals, subject_ids, scan_dirs, length(fcs)-num_per_group+1, length(fcs), colorMap, percentile, name);
 ylabel(axes_list(1), 'Highest', 'FontSize', fs);
+%}
 
+
+function [metrics_list, fields, names] = compute_all_ps_metrics(coeffs_list, scs)
+
+    metrics_list = cell(length(coeffs_list), 1);
+    for c_idx = 1:length(coeffs_list)
+        coeffs = coeffs_list{c_idx};
+        [ms.frobs, ms.max_svs, ms.max_abs_vals] = compute_ps_metrics(coeffs, scs);
+        ms.name = join(string(coeffs));
+        metrics_list{c_idx} = ms;
+    end
+    
+    fields = ["frobs", "max_svs", "max_abs_vals"];
+    names = ["Frob Norm", "Max Singular Value", "Max Absolute Value Entrywise"];
+
+end
+
+function [frob, max_svs, max_abs_val] = compute_ps_metrics(coeffs, scs)
+    % H^2 = ensamble cov of diffused white signals
+    ps_c1_fcs_tensor = apply_to_tensor_slices(@(x) diffusion_filter(coeffs, x)^2, scs);
+    [frob, max_svs, max_abs_val] = compute_fc_metrics(ps_c1_fcs_tensor);
+
+end
+
+function [H] = diffusion_filter(cs, S)
+    H = zeros(size(S));
+    for l = 1:length(cs)
+        H = H + cs(l)*S^l; 
+    end
+
+end
+
+function [frob, max_svs, max_abs_val] = compute_fc_metrics(fcs_tensor)
+
+    frob = apply_to_tensor_slices(@(x) norm(x,'fro'), fcs_tensor);
+    max_svs = apply_to_tensor_slices(@(x) norm(x), fcs_tensor);
+    max_abs_val = apply_to_tensor_slices(@(x) max(abs(x), [], 'all'), fcs_tensor);
+    %max_val = apply_to_tensor_slices(@(x) max(x, [], 'all'), fcs_tensor);
+    %min_val = apply_to_tensor_slices(@(x) min(x, [], 'all'), fcs_tensor);
+
+end
 
 % assume fcs already in sorted order
 function fc_axes = place_fcs(t, fcs, fc_metrics, subject_ids, scan_dirs, start_idx, end_idx, colormap, percentile, name)
@@ -135,14 +187,14 @@ function c_sorted = sort_cell_by(c, sorted_indices)
     end
 end
 
-function place_summary_points(ax, x)
+function place_summary_points(ax, x, markertype)
     y = -15;
-    fs = 20;
-    scatter(ax, [max(x), min(x), mean(x), median(x)], [0,0,0,0], '*');
-    text(max(x), y,'max', 'FontSize', fs);
-    text(min(x), y,'min', 'FontSize', fs);
-    text(mean(x), y,'mean', 'FontSize', fs);
-    text(median(x),y,'median', 'FontSize', fs);
+    fs = 15;
+    scatter(ax, [max(x), min(x), mean(x), median(x)], [0,0,0,0], markertype, 'DisplayName', '');
+    text(max(x), y, 'max', 'FontSize', fs);
+    text(min(x), y, 'min', 'FontSize', fs);
+    text(mean(x), y, 'mean', 'FontSize', fs);
+    text(median(x),y, 'median', 'FontSize', fs);
 
 end
 
@@ -196,4 +248,23 @@ function [fcs, subject_ids, scan_dirs] = f(subject_list, atlas, task, include_su
 	fprintf('%d scans_rejected: %d atlas | %d fmris | %d scs\n', scans_rejected, missing_atlas, missing_fmris, missing_scs/2);
 
 end
+
+function scs_upper_tri = load_processed_scs(atlas, include_subcortical, edge_transform)
+    cortical_idxs = get_roi_idxs(atlas, include_subcortical);
+
+    if isequal(atlas, 'desikan')
+        scs_file = load('scs_desikan.mat');
+    else
+        error('atlas %s unsupported', atlas)
+    end
+    
+    scs_upper_tri = scs_file.scs(cortical_idxs, cortical_idxs, :);
+
+    if isequal(edge_transform, 'log')
+        scs_upper_tri = log(scs_upper_tri+1);
+    end
+
+
+end
+
 
