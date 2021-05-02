@@ -12,6 +12,8 @@ end
 
 if contains(tasktype, 'REST1', 'IgnoreCase', true)
     tasktype = 'rfMRI_REST1';
+elseif contains(tasktype, 'REST2', 'IgnoreCase', true)
+    tasktype = 'rfMRI_REST2';
 else
     error("Task %s not supported yet (or typo)", tasktype)
 end

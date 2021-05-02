@@ -26,8 +26,8 @@ subject_list = fc_sc_set_file.exist_any_fc_and_sc; % (1064x1 int64)
 
 %% parameters to change for different tasks, atlas', etc
 atlas = "desikan"; %"destrieux"
-tasktype='rfMRI_REST1'; %'tfMRI_GAMBLING'; 'tfMRI_MOTOR'; 'tfMRI_GAMBLING'; 'tfMRI_SOCIAL'; 'tfMRI_LANGUAGE';
-sub_tasktype = 'REST1';
+tasktype ='rfMRI_REST2'; %'tfMRI_GAMBLING'; 'tfMRI_MOTOR'; 'tfMRI_GAMBLING'; 'tfMRI_SOCIAL'; 'tfMRI_LANGUAGE';
+sub_tasktype = 'REST2';
 include_subcortical = true;
 subcortical_first = true;
 
@@ -71,21 +71,22 @@ for i_index = 1:length(subject_list)
     has_cached_lr = isfile(cached_filename_lr);
     has_cached_rl = isfile(cached_filename_rl);
     
-    path_to_fmri_LR1 = [raw_hcp_datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
-    path_to_fmri_RL1 = [raw_hcp_datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
+    path_to_fmri_LR = [raw_hcp_datafolder '/' subject '/' tasktype '_LR_Atlas_hp2000_clean.dtseries.nii'];
+    path_to_fmri_RL = [raw_hcp_datafolder '/' subject '/' tasktype '_RL_Atlas_hp2000_clean.dtseries.nii'];
     
     %check which fmri scans exist - can have neither, one, or both
-    has_fmri_LR1 = isfile(path_to_fmri_LR1);
-    has_fmri_RL1 = isfile(path_to_fmri_RL1);
+    has_fmri_LR1 = isfile(path_to_fmri_LR);
+    has_fmri_RL1 = isfile(path_to_fmri_RL);
     
     % attempt lr
     time_lr = 0.0;
     load_and_save_lr = has_fmri_LR1 && ~has_cached_lr;
     if load_and_save_lr
         start = tic;
-        fmri_path = path_to_fmri_LR1;
+        fmri_path = path_to_fmri_LR;
         scan = ['LR_' sub_tasktype];
-        dtseries = process_fmri(atlas, fmri_path, subject, raw_hcp_datafolder, chosen_roi);
+        [dtseries] = load_functional_dtseries(subject, atlas, tasktype, 'lr', raw_hcp_datafolder);
+        %[dtseries] = process_fmri(atlas, fmri_path, subject, raw_hcp_datafolder, chosen_roi);
         par_save_dtseries(cached_filename_lr, atlas, scan, tasktype, chosen_roi, dtseries)
         time_lr = toc(start);   
     end
@@ -95,9 +96,10 @@ for i_index = 1:length(subject_list)
     load_and_save_rl = has_fmri_RL1 && ~has_cached_rl;
     if load_and_save_rl
         start = tic;
-        fmri_path = path_to_fmri_RL1;
-        scan = ['RL_' sub_tasktype];
-        dtseries = process_fmri(atlas, fmri_path, subject, raw_hcp_datafolder, chosen_roi);
+        fmri_path = path_to_fmri_RL;
+        scan = ['RLs_' sub_tasktype];
+        [dtseries] = load_functional_dtseries(subject, atlas, tasktype, 'rl', raw_hcp_datafolder);
+        %dtseries = process_fmri(atlas, fmri_path, subject, raw_hcp_datafolder, chosen_roi);
         par_save_dtseries(cached_filename_rl, atlas, scan, tasktype, chosen_roi, dtseries)
         time_rl = toc(start);
     end

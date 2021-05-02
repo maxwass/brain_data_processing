@@ -31,22 +31,37 @@ classdef ScanInfo
                 obj.include_subcortical = include_subcortical;
             end
         end
+        
+        function exist = exist(obj)
+            if any(any( isnan(obj.load_functional_dtseries()) ))
+                exist = false;
+            else
+                exist = true;
+            end
+            
+        end
+
         function dtseries = load_functional_dtseries(obj)
-            dtseries = load_functional_dtseries(obj.subject_id, obj.atlas, obj.task, obj.scan_direction, obj.rawdatafolder);
-            dtseries   = dtseries(obj.get_roi_idxs(), :);
+            try
+                dtseries = load_functional_dtseries(obj.subject_id, obj.atlas, obj.task, obj.scan_direction, obj.rawdatafolder);
+                roi_idxs = get_roi_idxs(obj.atlas, obj.include_subcortical);
+                dtseries   = dtseries(roi_idxs, :);
+            catch ME1
+                %disp('File Not Found: ');
+                %disp(ME1.identifier);
+                dtseries = NaN;
+            end
         end
-        function A = extract_sc(obj)
-            [A] = extract_sc(obj.subject_id, obj.atlas, obj.include_subcortical);
-        end
-        function [GFT, evals_vec, S] = extract_GFT(obj, GSO)
-            [GFT, evals_vec, S] = extract_GFT(obj.subject_id, obj.atlas, obj.include_subcortical, GSO);
-        end
-        function [roi_idxs] = get_roi_idxs(obj)
-            roi_idxs = get_roi_idxs(obj.atlas, obj.include_subcortical);
-        end
+        
         function [fc] = compute_fc(obj)
-            fc = cov(obj.load_functional_dtseries()');
+            dtseries = obj.load_functional_dtseries();
+            if any(any(isnan(dtseries)))
+                fc = NaN;
+            else
+                fc = cov(dtseries');
+            end
         end
+        
         function [is_eq] = eq(obj, other)
             is_eq = ...
                 isequal(obj.subject_id, other.subject_id) && ...

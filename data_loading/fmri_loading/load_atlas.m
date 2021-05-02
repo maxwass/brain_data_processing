@@ -41,7 +41,7 @@ else
 end
 
 endload = toc(startload);
-fprintf('load_atlas %s - %.2f\n', subject, endload);
+%fprintf('load_atlas %s - %.2f\n', subject, endload);
 end
 
 function dne_exception(path2atlas)

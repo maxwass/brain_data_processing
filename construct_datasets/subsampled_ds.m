@@ -1,11 +1,11 @@
-function subsampled_ds(intervals_to_remove, include_subcortical)
+function subsampled_ds(include_subcortical)
 %% Define inputs needed for each step in pipeline
 
 %% patient and scan info
-info = struct("atlas", 'desikan', "tasktype", 'rfMRI_REST1', "include_subcortical", include_subcortical, "GSO", 'L', "rand_seed", 10);
+info = struct("atlas", 'desikan', "tasks", ['rfMRI_REST1', 'rfMRI_REST1'], "include_subcortical", include_subcortical, "rand_seed", 10);
 rng(info.rand_seed);
 
-
+%{
 %% Preprocess inputs fmri signals
 preprocess_filter.filter          = false;
 preprocess_filter.name            = 'freq_distribution';
@@ -25,27 +25,24 @@ else
 end
 %}
 freq_filter.intervals_txt = intervals_to_string(freq_filters.intervals_to_remove);
-
+%}
 
 %% Subset construction inputs
 subset_construction = struct("name", 'full');
 %subset_construction = struct("name", 'windowing', 'windowsize', 400, 'movesize', 400);
 %subset_construction = struct("name", 'sampling', "num_subsets", 3, "sps", 700, "with_replacement", false);
 
-%% Post processing inputs
-fc_filter = struct('filter', false, 'name', 'eig', 'which_eig', 1, 'threshold', 90, 'use_percentile', true);
-
 %% create unique filename based on filters and save
-filepath = unique_filename(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
+filepath = unique_filename(subset_construction);
 
 %% Create actual dataset
-[data, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info);
+[data, chosen_roi] = create_dataset(subset_construction, info);
 
-save(filepath, "data", "subset_construction", "preprocess_filter", "freq_filter", "fc_filter", "info", "chosen_roi", '-v7');
+save(filepath, "data", "subset_construction", "info", "chosen_roi", '-v7');
 
 end
 
-function filepath = unique_filename(preprocess_filter, freq_filter, subset_construction, fc_filter, info)
+function filepath = unique_filename(subset_construction)
 
 %% combine info and filters for unique filename
 
@@ -63,20 +60,7 @@ else
     subset_construction_txt = "";
 end
 
-if preprocess_filter.filter
-    error("not implimented");
-end
-
-freq_intervals_kept_txt = "";
-if freq_filter.filter
-    freq_intervals_kept_txt = sprintf("%sIntervalsKept%s", freq_filter.variation_metric, freq_filter.intervals_txt);
-end
-
-if fc_filter.filter
-    error("not implimented");
-end
-
-filename = sprintf("%s%s", subset_construction_txt, freq_intervals_kept_txt);
+filename = sprintf("%s", subset_construction_txt);
 
 %% each subset technique has own folder
 dataset_folder = "subsample_datasets_REST1";
@@ -94,20 +78,13 @@ end
 
 
 
-function [data, chosen_roi] = create_dataset(preprocess_filter, freq_filter, subset_construction, fc_filter, info)
+function [data, chosen_roi] = create_dataset(subset_construction, info)
 % subset_construction ::  struct. 
 %  If name == 'windowing'
 %       fields "windowsize" :: int, "movesize" :: int
 %  If name == 'sampling'
 %       fields "num_subsets" :: int, "sps" :: int, "with_replacement" :: logical
 % in {'windowing', 'sampling'}
-% freq_filter :: struct
-%   fields: filter :: logical, intervals_to_remove :: [cell] of integer
-%   ranges to keep
-% preprocess_filter :: struct
-%   fields: filter, name, threshold, use_percentile, ranges
-% fc_filter :: struct
-
 
 
 % for further time optimization, make all cached data be loaded in one
@@ -124,31 +101,17 @@ function [data, chosen_roi] = create_dataset(preprocess_filter, freq_filter, sub
 %% Define high level hp's
 raw_hcp_datafolder = '/Volumes/Elements/brain_data';
 
-[atlas, tasktype, include_subcortical, GSO] = ...
-    deal(info.atlas, info.tasktype, info.include_subcortical, info.GSO);
+[atlas, tasks, include_subcortical, GSO] = ...
+    deal(info.atlas, info.tasks, info.include_subcortical, info.GSO);
 
 %% which rois to consider
-%{
-if(strcmp(atlas,"desikan"))
-    chosen_roi         = load('data/desikan_roi_zhengwu', 'roi').roi;
-    sum_stat_file      = load('data/fmri_desikan_summary_stats.mat');
-elseif(strcmp(atlas,"destrieux"))
-    chosen_roi         = load('data/destrieux_roi_zhengwu', 'roi').roi;
-else
-    error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")
-end
-%}
 
 roi_idxs = get_roi_idxs(atlas, include_subcortical);
 num_rois = length(roi_idxs);
 
-if preprocess_filter.filter
-    preprocess_filter.ranges = construct_freq_ranges(num_rois, preprocess_filter.splits);
-end
-
 
 %% Mean center: compute scalar s to subtract from all signals for mean centering: x-s*1's
-[ave_node_val] = average_node_value(atlas, roi_idxs);
+%[ave_node_val] = average_node_value(atlas, roi_idxs);
 
 %% determine which patients to do this for
 fc_sc_set_file = load('fc_and_sc_sets.mat');
