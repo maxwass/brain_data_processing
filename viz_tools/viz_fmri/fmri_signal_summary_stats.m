@@ -57,10 +57,10 @@ end
 
 
 if(strcmp(atlas,"desikan"))
-    chosen_roi         = load('data/desikan_roi_zhengwu', 'roi').roi;
+    chosen_roi         = load('data/desikan_roi_zhengwu');
 	cached_data_folder = cached_desikan;
 elseif(strcmp(atlas,"destrieux"))
-    chosen_roi         = load('data/destrieux_roi_zhengwu', 'roi').roi;
+    chosen_roi         = load('data/destrieux_roi_zhengwu');
 	cached_data_folder = cached_destrieux;
 else
 	error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")

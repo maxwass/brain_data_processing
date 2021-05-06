@@ -33,7 +33,7 @@ end
 
 %% which ROI's are we analyzing? and with which atlas?
 if contains(atlas, 'desikan', 'IgnoreCase', true)
-    chosen_roi = load('data/desikan_roi_zhengwu.mat').roi;
+    chosen_roi = load('data/desikan_roi_zhengwu.mat');
     %num_chosen_roi = 87;
     num_chosen_roi = length(chosen_roi.cortical) + length(chosen_roi.subcortical); %68 in desikan cortical +  19 subcortical GM (gray matter) structures
 else

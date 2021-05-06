@@ -63,10 +63,10 @@ for i_index=1:length(subject_list)
     subject = subject_list(i_index,:); %must be char array for [...] to work later
 
     if(strcmp(atlas,"desikan"))
-        chosen_roi         = load('data/desikan_roi_zhengwu', 'roi').roi;
+        chosen_roi         = load('data/desikan_roi_zhengwu');
         plot_write_path = plots_dir + "/desikan_cortical_" + string(subject);
     elseif(strcmp(atlas,"destrieux"))
-        chosen_roi         = load('data/destrieux_roi_zhengwu', 'roi').roi;
+        chosen_roi         = load('data/destrieux_roi_zhengwu');
         filename = plots_dir + "/destrieux_cortical_" + string(subject);
     else
         error("Atlas " + atlas + " not found. Use Desikan or Destrieux.")

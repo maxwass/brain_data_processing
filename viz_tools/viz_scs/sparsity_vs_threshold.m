@@ -29,6 +29,7 @@ xlabel('Threshold', 'FontSize', 20);
 ylabel('Sparsity', 'FontSize', 20);
 title('Sparsity vs Threshold', 'FontSize', 35);
 legend;
+grid on;
 
 
 % input must be 3D tensor: N x N x num_matrices
