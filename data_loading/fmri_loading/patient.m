@@ -35,14 +35,14 @@ classdef patient
             
         end
         
-        function [fc] = full_rest_fc(obj, atlas, include_subcortical)
+        function [fc] = full_rest_fc(obj, atlas, include_subcortical, mean_norm)
             lr_rest1 = ScanInfo(obj.subject_id, atlas, 'REST1', 'LR', include_subcortical);
             lr_rest2 = ScanInfo(obj.subject_id, atlas, 'REST2', 'LR', include_subcortical);
             rl_rest1 = ScanInfo(obj.subject_id, atlas, 'REST1', 'RL', include_subcortical);
             rl_rest2 = ScanInfo(obj.subject_id, atlas, 'REST2', 'RL', include_subcortical);
             
-            full_lr_dtseries = concat_dtseries(lr_rest1, lr_rest2);
-            full_rl_dtseries = concat_dtseries(rl_rest1, rl_rest2);
+            full_lr_dtseries = concat_dtseries(lr_rest1, lr_rest2, mean_norm);
+            full_rl_dtseries = concat_dtseries(rl_rest1, rl_rest2, mean_norm);
             
             if any(any(isnan(full_lr_dtseries))) && any(any(isnan(full_rl_dtseries)))
                 fc = NaN;
@@ -68,11 +68,12 @@ classdef patient
             end
         end
         
-        function viz_fcs(obj, atlas, include_subcortical, percentile)
-            [all, ~, ~] = obj.which_fcs_exist(atlas, include_subcortical);
+        function viz_fcs(obj, atlas, include_subcortical, percentile, mean_norm)
+            [all, ~, ~, ~] = obj.which_fcs_exist(atlas, include_subcortical);
             
             if all
-                all_fc_plot(lr_rest1, lr_rest2, rl_rest1, rl_rest2, percentile);
+                [lr_rest1, lr_rest2, rl_rest1, rl_rest2] = obj.rest_scans(atlas, include_subcortical);
+                all_fc_plot(lr_rest1, lr_rest2, rl_rest1, rl_rest2, mean_norm, percentile);
             end
             
         end
@@ -131,7 +132,7 @@ classdef patient
 end
 
 
-function [full_dtseries] = concat_dtseries(scan_info_1, scan_info_2)
+function [full_dtseries] = concat_dtseries(scan_info_1, scan_info_2, mean_norm)
 
            
 	if ~scan_info_1.exist() && ~scan_info_2.exist()
@@ -143,7 +144,11 @@ function [full_dtseries] = concat_dtseries(scan_info_1, scan_info_2)
     else
         dt1 = scan_info_1.load_functional_dtseries();
         dt2 = scan_info_2.load_functional_dtseries();
-        full_dtseries = cat(2, dt1, dt2);
+        if mean_norm
+           full_dtseries = cat(2, dt1-mean(dt1,2), dt2-mean(dt2,2));
+        else
+            full_dtseries = cat(2, dt1, dt2);
+        end
         [rows, cols] = size(full_dtseries);
         if rows > cols
             disp('ERROR: Concatenate incorrectly')
@@ -152,18 +157,18 @@ function [full_dtseries] = concat_dtseries(scan_info_1, scan_info_2)
     
 end
 
-function all_fc_plot(lr_rest1, lr_rest2, rl_rest1, rl_rest2, percentile)
+function all_fc_plot(lr_rest1, lr_rest2, rl_rest1, rl_rest2, mean_norm, percentile)
 f = figure();
 t = tiledlayout(2,4);
 
 
 fc_lr1 = lr_rest1.compute_fc();
 fc_lr2 = lr_rest2.compute_fc();
-fc_lr_full = cov(concat_dtseries(lr_rest1, lr_rest2)');
+fc_lr_full = cov(concat_dtseries(lr_rest1, lr_rest2, mean_norm)');
 
 fc_rl1 = rl_rest1.compute_fc();
 fc_rl2 = rl_rest2.compute_fc();
-fc_rl_full = cov(concat_dtseries(rl_rest1, rl_rest2)');
+fc_rl_full = cov(concat_dtseries(rl_rest1, rl_rest2, mean_norm)');
 
 fc = (fc_lr_full + fc_rl_full)/2;
 

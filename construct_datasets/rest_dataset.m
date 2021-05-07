@@ -9,23 +9,24 @@ rand_seed = 10;
 rng(rand_seed);
 
 %% Subset construction inputs
-subset_construction = struct("name", 'sep'); %'full');
+subset_construction = struct("name", 'full'); %'sep');
 %subset_construction = struct("name", 'windowing', 'windowsize', 400, 'movesize', 400);
 %subset_construction = struct("name", 'sampling', "num_subsets", 3, "sps", 700, "with_replacement", false);
 
 %% create unique filename based on filters and save
-filepath = unique_filename(subset_construction);
+filepath = unique_filename(subset_construction, "all_scans_mean_norm");
 
 %% Create actual dataset
 if isequal(subset_construction.name, 'full')
-    [data] = create_dataset_full(atlas, include_subcortical);
+    mean_norm = true;
+    [data] = create_dataset_full(atlas, include_subcortical, mean_norm);
 else
     [data] = create_dataset_sep(atlas, include_subcortical);
 end
 save(filepath, "data", "subset_construction", "atlas", "include_subcortical", "task", '-v7');
 
 
-function filepath = unique_filename(subset_construction)
+function filepath = unique_filename(subset_construction, filename)
 
 %% combine info and filters for unique filename
 
@@ -45,7 +46,6 @@ elseif isequal(subset_construction.name, "sep")
     subset_construction_txt = "sep";
 end
 
-filename = sprintf("%s", subset_construction_txt);
 
 %% each subset technique has own folder
 dataset_folder = "subsample_datasets";
@@ -63,7 +63,7 @@ end
 
 end
 
-function [data] = create_dataset_full(atlas, include_subcortical)
+function [data] = create_dataset_full(atlas, include_subcortical, mean_norm)
 
 %% which rois to consider
 roi_idxs = get_roi_idxs(atlas, include_subcortical);
@@ -95,13 +95,13 @@ for subject_idx = 1:length(subject_list)
         data(num_scans).subject_id = subject_int;
         data(num_scans).sc         = p.sc(atlas, include_subcortical);
         
-        data(num_scans).fc         = p.full_rest_fc(atlas, include_subcortical);
+        data(num_scans).fc         = p.full_rest_fc(atlas, include_subcortical, mean_norm);
     
         [lr_rest1, lr_rest2, rl_rest1, rl_rest2] = p.rest_scans(atlas, include_subcortical);
         data(num_scans).which_fcs = struct('lr1', lr_rest1.exist(), 'lr2', lr_rest2.exist(), 'rl1', rl_rest1.exist(), 'rl2', rl_rest2.exist());
   
         %optional viz
-        %p.viz_fcs(atlas, include_subcortical, 99.5);
+        %p.viz_fcs(atlas, include_subcortical, 99.5, mean_norm);
     end
             
 	elapsed_time = toc(start);
