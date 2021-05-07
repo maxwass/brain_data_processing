@@ -19,6 +19,22 @@ classdef patient
             dtseries = ScanInfo(obj.subject_id, atlas, task, scan_direction, include_subcortical).load_functional_dtseries();
         end
         
+        function [fc] = rest_fc(obj, atlas, include_subcortical, task)
+            lr = ScanInfo(obj.subject_id, atlas, task, 'LR', include_subcortical);
+            rl = ScanInfo(obj.subject_id, atlas, task, 'RL', include_subcortical);
+            
+            if ~lr.exist() && ~rl.exist()
+                fc = NaN;
+            elseif ~lr.exist()
+                fc = rl.compute_fc();
+            elseif ~rl.exist()
+                fc = lr.compute_fc();
+            else
+                fc = (lr.compute_fc() + rl.compute_fc())/2;
+            end
+            
+        end
+        
         function [fc] = full_rest_fc(obj, atlas, include_subcortical)
             lr_rest1 = ScanInfo(obj.subject_id, atlas, 'REST1', 'LR', include_subcortical);
             lr_rest2 = ScanInfo(obj.subject_id, atlas, 'REST2', 'LR', include_subcortical);
@@ -68,7 +84,7 @@ classdef patient
             rl_rest2 = ScanInfo(obj.subject_id, atlas, 'REST2', 'RL', include_subcortical);
         end
         
-        function [all, at_least_one_of_each, none] = which_fcs_exist(obj, atlas, include_subcortical)
+        function [all, at_least_one_of_each, at_least_one_per_task, none] = which_fcs_exist(obj, atlas, include_subcortical)
             [lr_rest1, lr_rest2, rl_rest1, rl_rest2] = obj.rest_scans(atlas, include_subcortical);
             
             all = false;
@@ -86,6 +102,10 @@ classdef patient
                 none = true;
             end
             
+            at_least_one_per_task = false;
+            if (lr_rest1.exist() || rl_rest1.exist()) && (lr_rest2.exist() || rl_rest2.exist())
+               at_least_one_per_task = true; 
+            end
         end
         
         function f = exist_sc(obj, atlas)
