@@ -33,10 +33,14 @@ classdef ScanInfo
         end
         
         function exist = exist(obj)
-            if any(any( isnan(obj.load_functional_dtseries()) ))
-                exist = false;
-            else
+            
+            [~, is_cached] = cached_filepath(obj.atlas, obj.task, obj.subject_id, obj.scan_direction);
+            [path2fmri] = fmri_filepath(obj.rawdatafolder, obj.atlas, obj.task, obj.subject_id, obj.scan_direction);
+            
+            if  is_cached || isfile(path2fmri) % any(any( isnan(obj.load_functional_dtseries()) ))
                 exist = true;
+            else
+                exist = false;
             end
             
         end
@@ -53,12 +57,18 @@ classdef ScanInfo
             end
         end
         
-        function [fc] = compute_fc(obj)
+        function [fc] = compute_fc(obj, which_fc)
             dtseries = obj.load_functional_dtseries();
-            if any(any(isnan(dtseries)))
+            if ~obj.exist()
                 fc = NaN;
             else
-                fc = cov(dtseries');
+                if strcmp(which_fc, 'cov')
+                    fc = cov(dtseries');
+                elseif strcmp(which_fc, 'corr')
+                    fc = corr(dtseries');
+                else
+                    error('unrecognized which_fc %s', which_fc);
+                end
             end
         end
         

@@ -14,16 +14,12 @@ subset_construction = struct("name", 'full'); %'sep');
 %subset_construction = struct("name", 'sampling', "num_subsets", 3, "sps", 700, "with_replacement", false);
 
 %% create unique filename based on filters and save
-filepath = unique_filename(subset_construction, "all_scans_mean_norm");
+%filepath = unique_filename(subset_construction, "all_fc_sc");
+filepath = 'data/created_datasets/all_fc_sc.mat';
 
 %% Create actual dataset
-if isequal(subset_construction.name, 'full')
-    mean_norm = true;
-    [data] = create_dataset_full(atlas, include_subcortical, mean_norm);
-else
-    [data] = create_dataset_sep(atlas, include_subcortical);
-end
-save(filepath, "data", "subset_construction", "atlas", "include_subcortical", "task", '-v7');
+[data] = create_dataset_full(atlas, include_subcortical);
+save(filepath, "data", "atlas", "include_subcortical", "task", '-v7');
 
 
 function filepath = unique_filename(subset_construction, filename)
@@ -63,7 +59,7 @@ end
 
 end
 
-function [data] = create_dataset_full(atlas, include_subcortical, mean_norm)
+function [data] = create_dataset_full(atlas, include_subcortical)
 
 %% which rois to consider
 roi_idxs = get_roi_idxs(atlas, include_subcortical);
@@ -74,10 +70,16 @@ subject_list = load('hcp_1200_subject_list.mat').hcp1200_subject_list;
 
 %% loop through all scans
 % preallocate if slow
-which_fcs = struct('lr1', false, 'lr2', false, 'rl1', false, 'rl2', false);
-data = repmat(struct('subject_id',-1,'fc',[],'sc',zeros(num_rois,num_rois), 'which_fcs', which_fcs),length(subject_list),1);
+which_scans_exist = struct('REST1_LR', false, 'REST2_LR', false, 'REST1_RL', false, 'REST2_RL', false);
+fcs_individual = struct('REST1_LR', [], 'REST2_LR', [], 'REST1_RL', [], 'REST2_RL', []);
+fcs_task_grouped = struct('REST1', [], 'REST2', []);
+fcs_scandir_grouped = struct('LR', [], 'RL', []);
+fcs_all = struct('all', []);
+fcs = struct('individual', fcs_individual, 'task_grouped', fcs_task_grouped, 'scandir_grouped', fcs_scandir_grouped, 'fcs_all', fcs_all);
+data = repmat(struct('subject_id',-1,'fcs', fcs, 'sc', zeros(num_rois,num_rois), 'which_fcs_exist', which_scans_exist), length(subject_list),1);
 subject_ids = zeros(3000,1,'uint32');
 
+% num_scans :: number of subjects we include in dataset
 [num_iters, num_scans, total_time] = deal(0, 0, 0);
 for subject_idx = 1:length(subject_list)
     subject_int = str2double(subject_list(subject_idx,:));
@@ -85,20 +87,23 @@ for subject_idx = 1:length(subject_list)
     [all, at_least_one_of_each, at_least_one_per_task, none] = p.which_fcs_exist(atlas, include_subcortical);
     
     start = tic();
-    if p.exist_sc(atlas) && all
+    if p.exist_sc(atlas) && ~none
         
-        fprintf('%d/%d: ...', subject_idx, length(subject_list));
         num_scans = num_scans + 1;
+        fprintf('idx/subjects included/total %d/%d/%d: ', subject_idx, num_scans, length(subject_list));
+
     
         %% populate struct
-        subject_ids(num_scans)       = int32(subject_int); %correct index?
+        subject_ids(num_scans)     = int32(subject_int); %correct index?
         data(num_scans).subject_id = subject_int;
         data(num_scans).sc         = p.sc(atlas, include_subcortical);
         
-        data(num_scans).fc         = p.full_rest_fc(atlas, include_subcortical, mean_norm);
-    
+        data(num_scans).fcs = populate_fcs(p, atlas, include_subcortical);
+        
+        %data(num_scans).fc         = p.full_rest_fc(atlas, include_subcortical, mean_norm);
+
         [lr_rest1, lr_rest2, rl_rest1, rl_rest2] = p.rest_scans(atlas, include_subcortical);
-        data(num_scans).which_fcs = struct('lr1', lr_rest1.exist(), 'lr2', lr_rest2.exist(), 'rl1', rl_rest1.exist(), 'rl2', rl_rest2.exist());
+        data(num_scans).which_scans_exist = struct('REST1_LR', lr_rest1.exist(), 'REST2_LR', lr_rest2.exist(), 'REST1_RL', rl_rest1.exist(), 'REST2_RL', rl_rest2.exist());
   
         %optional viz
         %p.viz_fcs(atlas, include_subcortical, 99.5, mean_norm);
@@ -111,14 +116,33 @@ for subject_idx = 1:length(subject_list)
     num_iters_left = length(subject_list) - subject_idx;
     total_time = total_time + elapsed_time;
     ave_patient_time = total_time/num_scans;
-    expected_time_left = ave_patient_time*num_iters_left/3600; %in hrs
-    fprintf('elapsed time: %.2f | ave time: %.1f | expected time remain %.2f (hrs)=== %%\n', elapsed_time, ave_patient_time, expected_time_left);
+    expected_time_left = ave_patient_time*num_iters_left/60; %in hrs
+    fprintf('elapsed time: %.2f | ave time: %.1f | expected time remain %.2f (mins)=== %%\n', elapsed_time, ave_patient_time, expected_time_left);
 end
 
 
 data = data(1:num_scans);
 
 end
+
+
+function [fcs_struct] = populate_fcs(p, atlas, include_subcortical)
+    [rest1_lr_fc, rest1_rl_fc, rest2_lr_fc, rest2_rl_fc] = p.individual_fc(atlas, include_subcortical, 'cov');
+    fcs_individual = struct('REST1_LR', rest1_lr_fc, 'REST2_LR', rest2_lr_fc, 'REST1_RL', rest1_rl_fc, 'REST2_RL', rest2_rl_fc);
+    
+    [rest1_fc, rest2_fc] = p.task_grouped_fc(atlas, include_subcortical, 'cov');
+    fcs_task_grouped = struct('REST1', rest1_fc, 'REST2', rest2_fc);
+    
+    [lr_fc, rl_fc] = p.direction_grouped_fc(atlas, include_subcortical, 'cov');
+    fcs_scandir_grouped = struct('LR', lr_fc, 'RL', rl_fc);
+    
+    [total_fc] = p.concat_all_fc(atlas, include_subcortical, 'cov');
+    fcs_all = struct('all', total_fc);
+    
+    fcs_struct = struct('individual', fcs_individual, 'task_grouped', fcs_task_grouped, 'scandir_grouped', fcs_scandir_grouped, 'fcs_all', fcs_all);
+end
+
+
 
 function [data] = create_dataset_sep(atlas, include_subcortical)
 

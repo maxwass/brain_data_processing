@@ -1,4 +1,4 @@
-%% startup: add repo to path
+path%% startup: add repo to path
 disp(pwd)
 
 %recursively adds all repo files/folders
