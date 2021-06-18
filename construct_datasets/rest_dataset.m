@@ -76,7 +76,7 @@ fcs_task_grouped = struct('REST1', [], 'REST2', []);
 fcs_scandir_grouped = struct('LR', [], 'RL', []);
 fcs_all = struct('all', []);
 fcs = struct('individual', fcs_individual, 'task_grouped', fcs_task_grouped, 'scandir_grouped', fcs_scandir_grouped, 'fcs_all', fcs_all);
-data = repmat(struct('subject_id',-1,'fcs', fcs, 'sc', zeros(num_rois,num_rois), 'which_fcs_exist', which_scans_exist), length(subject_list),1);
+data = repmat(struct('subject_id',-1,'fcs', fcs, 'sc', zeros(num_rois,num_rois), 'which_scans_exist', which_scans_exist), length(subject_list),1);
 subject_ids = zeros(3000,1,'uint32');
 
 % num_scans :: number of subjects we include in dataset
